@@ -1,0 +1,35 @@
+
+> codexmattrix-nextjs@1.0.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 44ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 20.6s
+  Running TypeScript ...
+  Finished TypeScript in 7.7s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/12) ...
+  Generating static pages using 3 workers (3/12) 
+  Generating static pages using 3 workers (6/12) 
+  Generating static pages using 3 workers (9/12) 
+✓ Generating static pages using 3 workers (12/12) in 1767ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ○ /case-studies
+├ ○ /contact
+├ ○ /faq
+├ ○ /icon.svg
+├ ○ /pricing
+├ ○ /process
+└ ○ /services
+
+
+○  (Static)  prerendered as static content
+

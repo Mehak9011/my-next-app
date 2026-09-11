@@ -1,0 +1,594 @@
+{
+  "key": "group_65b2c0a1e1f10",
+  "title": "Home Page — Sections",
+  "fields": [
+    {
+      "key": "field_65b2c0a100001",
+      "label": "Hero — Kicker",
+      "name": "hero_kicker",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "Small uppercase line above the hero title.",
+      "required": 0,
+      "conditional_logic": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Envision · Design · Code",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "heroKicker"
+    },
+    {
+      "key": "field_65b2c0a100002",
+      "label": "Hero — Title",
+      "name": "hero_title",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Custom Web, App & Software Development Agency",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "heroTitle"
+    },
+    {
+      "key": "field_65b2c0a100003",
+      "label": "Hero — Subtitle",
+      "name": "hero_subtitle",
+      "aria-label": "",
+      "type": "textarea",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "We design high-performing websites, apps, and software that convert — for healthcare, cannabis, and growing US brands.",
+      "placeholder": "",
+      "maxlength": "",
+      "rows": 3,
+      "new_lines": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "heroSubtitle"
+    },
+    {
+      "key": "field_65b2c0a100004",
+      "label": "Hero — Trust Badge",
+      "name": "hero_trust_badge",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "Small line below the hero buttons.",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "★★★★★ Trusted by 15+ US brands across Healthcare, CBD & E-commerce",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "heroTrustBadge"
+    },
+    {
+      "key": "field_65b2c0a100005",
+      "label": "Stats",
+      "name": "stats",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Key numbers shown in the stats bar.",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "layout": "table",
+      "collapsed": "",
+      "min": 0,
+      "max": 0,
+      "button_label": "Add Stat",
+      "sub_fields": [
+        {
+          "key": "field_65b2c0a100006",
+          "label": "Value",
+          "name": "value",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "e.g. 15+ / 8–12 wks / 100%",
+          "required": 0,
+          "wrapper": {
+            "width": "50",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "value"
+        },
+        {
+          "key": "field_65b2c0a100007",
+          "label": "Label",
+          "name": "label",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "e.g. Projects Delivered",
+          "required": 0,
+          "wrapper": {
+            "width": "50",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "label"
+        }
+      ],
+      "show_in_graphql": 1,
+      "graphql_field_name": "stats"
+    },
+    {
+      "key": "field_65b2c0a100008",
+      "label": "Services — Heading",
+      "name": "services_heading",
+      "aria-label": "",
+      "type": "textarea",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Everything you need to design and build better digital products — in one place.",
+      "placeholder": "",
+      "maxlength": "",
+      "rows": 2,
+      "new_lines": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "servicesHeading"
+    },
+    {
+      "key": "field_65b2c0a100009",
+      "label": "Services — Groups",
+      "name": "services",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Two columns: Design Services and Development Services.",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "layout": "block",
+      "collapsed": "",
+      "min": 0,
+      "max": 0,
+      "button_label": "Add Service Group",
+      "sub_fields": [
+        {
+          "key": "field_65b2c0a100010",
+          "label": "Group Title",
+          "name": "title",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "e.g. Design Services",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "title"
+        },
+        {
+          "key": "field_65b2c0a100011",
+          "label": "Items",
+          "name": "items",
+          "aria-label": "",
+          "type": "textarea",
+          "instructions": "One service per line.",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "placeholder": "",
+          "maxlength": "",
+          "rows": 5,
+          "new_lines": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "items"
+        }
+      ],
+      "show_in_graphql": 1,
+      "graphql_field_name": "services"
+    },
+    {
+      "key": "field_65b2c0a100012",
+      "label": "Industries — Heading",
+      "name": "industries_heading",
+      "aria-label": "",
+      "type": "textarea",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "We know your industry because we've built in it.",
+      "placeholder": "",
+      "maxlength": "",
+      "rows": 2,
+      "new_lines": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "industriesHeading"
+    },
+    {
+      "key": "field_65b2c0a100013",
+      "label": "Industries",
+      "name": "industries",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Industry cards (image + copy).",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "layout": "block",
+      "collapsed": "",
+      "min": 0,
+      "max": 0,
+      "button_label": "Add Industry",
+      "sub_fields": [
+        {
+          "key": "field_65b2c0a100014",
+          "label": "Title",
+          "name": "title",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "title"
+        },
+        {
+          "key": "field_65b2c0a100015",
+          "label": "Description",
+          "name": "description",
+          "aria-label": "",
+          "type": "textarea",
+          "instructions": "",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "placeholder": "",
+          "maxlength": "",
+          "rows": 3,
+          "new_lines": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "description"
+        },
+        {
+          "key": "field_65b2c0a100016",
+          "label": "Image URL",
+          "name": "image",
+          "aria-label": "",
+          "type": "url",
+          "instructions": "Paste the WordPress media library URL of the card image.",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "placeholder": "https://cms.yourdomain.com/wp-content/uploads/…",
+          "show_in_graphql": 1,
+          "graphql_field_name": "image"
+        }
+      ],
+      "show_in_graphql": 1,
+      "graphql_field_name": "industries"
+    },
+    {
+      "key": "field_65b2c0a100017",
+      "label": "Testimonials — Heading",
+      "name": "testimonials_heading",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "Testimonials themselves are a custom post type (CPT: testimonial).",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Words From Businesses We've Worked With",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "testimonialsHeading"
+    },
+    {
+      "key": "field_65b2c0a100018",
+      "label": "FAQ — Heading",
+      "name": "faqs_heading",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Got Questions? Let's Clear Things Up.",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "faqsHeading"
+    },
+    {
+      "key": "field_65b2c0a100019",
+      "label": "FAQs",
+      "name": "faqs",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Frequently asked questions.",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "layout": "block",
+      "collapsed": "",
+      "min": 0,
+      "max": 0,
+      "button_label": "Add FAQ",
+      "sub_fields": [
+        {
+          "key": "field_65b2c0a100020",
+          "label": "Question",
+          "name": "question",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "question"
+        },
+        {
+          "key": "field_65b2c0a100021",
+          "label": "Answer",
+          "name": "answer",
+          "aria-label": "",
+          "type": "textarea",
+          "instructions": "",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "placeholder": "",
+          "maxlength": "",
+          "rows": 3,
+          "new_lines": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "answer"
+        }
+      ],
+      "show_in_graphql": 1,
+      "graphql_field_name": "faqs"
+    },
+    {
+      "key": "field_65b2c0a100022",
+      "label": "Final CTA — Title",
+      "name": "cta_title",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Ready to build something that actually grows your business?",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "ctaTitle"
+    },
+    {
+      "key": "field_65b2c0a100023",
+      "label": "Final CTA — Subtitle",
+      "name": "cta_subtitle",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Free 15-minute consultation. No pressure, no obligation.",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "ctaSubtitle"
+    },
+    {
+      "key": "field_65b2c0a100024",
+      "label": "Final CTA — Button Label",
+      "name": "cta_button",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Book Your Free Consultation →",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "ctaButton"
+    },
+    {
+      "key": "field_65b2c0a100025",
+      "label": "Clients — Heading",
+      "name": "clients_heading",
+      "aria-label": "",
+      "type": "text",
+      "instructions": "",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "default_value": "Businesses That Trust Us",
+      "maxlength": "",
+      "placeholder": "",
+      "prepend": "",
+      "append": "",
+      "show_in_graphql": 1,
+      "graphql_field_name": "clientsHeading"
+    },
+    {
+      "key": "field_65b2c0a100026",
+      "label": "Clients",
+      "name": "clients",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Client names shown in the logo strip.",
+      "required": 0,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "layout": "table",
+      "collapsed": "",
+      "min": 0,
+      "max": 0,
+      "button_label": "Add Client",
+      "sub_fields": [
+        {
+          "key": "field_65b2c0a100027",
+          "label": "Name",
+          "name": "name",
+          "aria-label": "",
+          "type": "text",
+          "instructions": "",
+          "required": 0,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "default_value": "",
+          "maxlength": "",
+          "placeholder": "",
+          "prepend": "",
+          "append": "",
+          "show_in_graphql": 1,
+          "graphql_field_name": "name"
+        }
+      ],
+      "show_in_graphql": 1,
+      "graphql_field_name": "clients"
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "page_type",
+        "operator": "==",
+        "value": "front_page"
+      }
+    ]
+  ],
+  "menu_order": 0,
+  "active": true,
+  "show_in_rest": 1,
+  "show_in_graphql": 1
+}

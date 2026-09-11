@@ -1,11 +1,12 @@
 {
-  "name": "my-next-app",
-  "version": "0.1.0",
+  "name": "codexmattrix-nextjs",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint"
   },
   "dependencies": {

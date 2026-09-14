@@ -79,3 +79,61 @@ export interface HomeContent {
     names: string[];
   };
 }
+
+/* ------------------------------------------------------------------
+   About page — populated by the bundled Next.js defaults
+   (app/lib/content/about.ts). WordPress only registers the "/about"
+   URL; it never provides content or design.
+   ------------------------------------------------------------------ */
+export interface AboutValue {
+  title: string;
+  description: string;
+}
+
+export interface AboutTeamMember {
+  name: string;
+  role: string;
+  location: string;
+  bio: string;
+}
+
+export interface AboutContent {
+  hero: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+    secondaryLabel: string;
+    trustBadge: string;
+  };
+  story: {
+    kicker: string;
+    heading: string;
+    paragraphs: string[];
+    pointsHeading: string;
+    points: string[];
+  };
+  mission: {
+    kicker: string;
+    heading: string;
+    mission: string;
+    vision: string;
+  };
+  values: {
+    kicker: string;
+    heading: string;
+    items: AboutValue[];
+  };
+  stats: Stat[];
+  team: {
+    kicker: string;
+    heading: string;
+    items: AboutTeamMember[];
+  };
+  cta: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    buttonLabel: string;
+  };
+}

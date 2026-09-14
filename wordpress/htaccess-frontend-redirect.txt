@@ -1,0 +1,43 @@
+# ============================================================
+# Headless WordPress — redirect the public frontend to Next.js
+# ------------------------------------------------------------
+# Upload this file to the WordPress web root as:  .htaccess
+# (cPanel -> File Manager -> navigate to the site root ->
+#  delete the old .htaccess / copy these rules into it)
+#
+# WHAT IT DOES
+#   • Backend/editor + API paths STAY on WordPress:
+#       /wp-admin, /wp-login.php, /graphql, /wp-json,
+#       /wp-content, /wp-includes, /index.php
+#   • Static asset extensions are left alone.
+#   • EVERY OTHER URL (/, /about/, /contact/, /services/, ...)
+#     gets a 301 redirect to the SAME path on your live domain
+#     (https://codexmattrix.com/about/), where Vercel/Next.js
+#     renders the page. The URL bar changes to the main domain.
+#
+# If you want the cms.codexmattrix.com URL to STAY in the address
+# bar instead, use htaccess-frontend-proxy.txt (mod_proxy).
+#
+# 1. Replace CODEXMATTRIX_DOMAIN with your live domain.
+# 2. Test http://cms.codexmattrix.com/about/ afterwards.
+# ============================================================
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# --- WordPress backend / API: never redirect these ----------
+RewriteRule ^index\.php$ - [L]
+RewriteRule ^wp-admin/ - [L]
+RewriteRule ^wp-login\.php - [L]
+RewriteRule ^wp-json/ - [L]
+RewriteRule ^graphql - [L]
+RewriteRule ^wp-content/ - [L]
+RewriteRule ^wp-includes/ - [L]
+
+# --- Static assets (served by WordPress or Next.js) ---------
+RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$ - [L,NC]
+
+# --- Everything else → the Next.js app on the main domain ---
+RewriteRule ^(.*)$ https://CODEXMATTRIX_DOMAIN/$1 [R=301,L]
+</IfModule>

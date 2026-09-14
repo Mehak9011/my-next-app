@@ -1,0 +1,36 @@
+# ============================================================
+# Headless WordPress — reverse proxy the public frontend to Next.js
+# ------------------------------------------------------------
+# Upload this file to the WordPress web root as:  .htaccess
+#
+# WHAT IT DOES
+#   Same as htaccess-frontend-redirect.txt, EXCEPT the browser
+#   address bar KEEPS https://cms.codexmattrix.com/about/ while
+#   Vercel/Next.js renders the page (reverse proxy, flag [P]).
+#
+# REQUIREMENT: Apache mod_proxy enabled on the host. Many shared
+# hosting plans (GoDaddy/cPanel) DISABLE mod_proxy for external
+# hosts — in that case use the redirect variant, or the
+# Cloudflare Worker (cloudflare-worker.js) which achieves the
+# same "keep the URL" behaviour without mod_proxy.
+#
+# 1. Replace CODEXMATTRIX_DOMAIN with your live domain.
+# ============================================================
+
+<IfModule mod_proxy.c>
+RewriteEngine On
+RewriteBase /
+
+# --- Backend / API / assets stay on WordPress -----------------
+RewriteRule ^index\.php$ - [L]
+RewriteRule ^wp-admin/ - [L]
+RewriteRule ^wp-login\.php - [L]
+RewriteRule ^wp-json/ - [L]
+RewriteRule ^graphql - [L]
+RewriteRule ^wp-content/ - [L]
+RewriteRule ^wp-includes/ - [L]
+RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$ - [L,NC]
+
+# --- Proxy everything else to the Next.js app ------------------
+RewriteRule ^(.*)$ https://CODEXMATTRIX_DOMAIN/$1 [P,L]
+</IfModule>

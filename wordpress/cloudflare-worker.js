@@ -1,70 +1,71 @@
-/**
- * ============================================================
- * Optional Cloudflare Worker — keep cms.codexmattrix.com URLs
- * while serving the Next.js pages from Vercel.
- *
- * When .htaccess mod_proxy is unavailable (shared hosting), you can
- * proxy the cms subdomain through Cloudflare and run this Worker:
- *
- *   1. Cloudflare Dashboard → cms.codexmattrix.com → DNS:
- *      make sure the record is proxied (orange cloud) and its origin
- *      is the WordPress host.
- *   2. Workers & Routes → Add route:  cms.codexmattrix.com/*
- *   3. Worker → Settings → Variables:
- *        MAIN_DOMAIN = codexmattrix.com   (your live Next.js domain)
- *   4. Deploy. Public page requests are proxied to Vercel; the
- *      address bar keeps cms.codexmattrix.com/about/.
- *
- * WordPress admin + API paths are left untouched → the editor and
- * https://cms.codexmattrix.com/graphql keep working normally.
- * ============================================================
- */
+// CodeXmattriX CMS -> Next.js reverse proxy
+// Cloudflare Worker route:
+//   cms.codexmattrix.com/*
+// Frontend pages are rendered by Vercel/Next.js while the browser
+// keeps the cms.codexmattrix.com URL.
+// WordPress admin/API paths continue to go to WordPress.
 
-const ADMIN_PREFIXES = [
-  "/wp-admin",
-  "/wp-login.php",
-  "/wp-json",
-  "/graphql",
-  "/wp-content",
-  "/wp-includes",
-  "/index.php",
+const NEXT_ORIGIN = "https://my-next-app-phi-flax.vercel.app";
+const CMS_ORIGIN = "https://cms.codexmattrix.com";
+
+const WP_PATHS = [
+  "/wp-admin", "/wp-login.php", "/wp-json", "/graphql",
+  "/wp-content", "/wp-includes", "/wp-cron.php"
 ];
 
-const STATIC_EXT = /\.(css|js|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$/i;
+function isWordPressPath(pathname) {
+  return WP_PATHS.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/") || pathname.startsWith(prefix + "?"));
+}
 
-const headlessProxy = {
-  async fetch(request, env) {
+export default {
+  async fetch(request) {
     const url = new URL(request.url);
-    const host = env.MAIN_DOMAIN || "codexmattrix.com";
 
-    const isAdmin = ADMIN_PREFIXES.some(
-      (prefix) => url.pathname === prefix || url.pathname.startsWith(prefix)
-    );
-    const isStatic = STATIC_EXT.test(url.pathname);
-
-    // WordPress handles its own backend, API and static files.
-    if (isAdmin || isStatic) {
+    // Keep WordPress admin, login and APIs on the CMS origin.
+    if (isWordPressPath(url.pathname)) {
       return fetch(request);
     }
 
-    // Everything else → the Next.js app on the main domain.
-    const target = `https://${host}${url.pathname}${url.search}`;
+    // Proxy public frontend routes to Next.js/Vercel.
+    const target = new URL(url.pathname + url.search, NEXT_ORIGIN);
     const headers = new Headers(request.headers);
-    headers.set("Host", host);
 
-    const init = {
+    // The upstream should see the Vercel hostname, not the CMS hostname.
+    headers.set("host", new URL(NEXT_ORIGIN).host);
+    headers.set("x-forwarded-host", url.host);
+    headers.set("x-forwarded-proto", url.protocol.replace(":", ""));
+
+    const upstreamRequest = new Request(target.toString(), {
       method: request.method,
       headers,
-      redirect: "manual",
       body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
-    };
-
-    const origin = await fetch(target, init);
-    return new Response(origin.body, {
-      status: origin.status,
-      headers: origin.headers,
+      redirect: "manual",
     });
+
+    const response = await fetch(upstreamRequest);
+
+    // Rewrite absolute redirects back to the CMS hostname so the browser
+    // does not leave cms.codexmattrix.com.
+    const location = response.headers.get("location");
+    if (location) {
+      try {
+        const redirectUrl = new URL(location, NEXT_ORIGIN);
+        if (redirectUrl.host === new URL(NEXT_ORIGIN).host) {
+          redirectUrl.host = url.host;
+          redirectUrl.protocol = url.protocol;
+          const outHeaders = new Headers(response.headers);
+          outHeaders.set("location", redirectUrl.toString());
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: outHeaders,
+          });
+        }
+      } catch {
+        // Keep the original response if Location is not an absolute URL.
+      }
+    }
+
+    return response;
   },
 };
-
-export default headlessProxy;

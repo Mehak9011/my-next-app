@@ -93,7 +93,7 @@ if (registry.length) {
 
 // 3. Key routes resolve via pageBy -------------------------------------------
 console.log("\n[3] Route resolution (pageBy uri)");
-for (const expected of ["home", "about", "contact"]) {
+for (const expected of ["home", "about", "contact", "services", "pricing", "faq", "process", "case-studies"]) {
   try {
     // The CMS uses plain permalinks -> try /slug/ and /index.php/slug/.
     const uris = [`/${expected}/`, `/index.php/${expected}/`];

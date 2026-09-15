@@ -32,5 +32,5 @@ RewriteRule ^wp-includes/ - [L]
 RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$ - [L,NC]
 
 # --- Proxy everything else to the Next.js app ------------------
-RewriteRule ^(.*)$ https://CODEXMATTRIX_DOMAIN/$1 [P,L]
+RewriteRule ^(.*)$ https://my-next-app-phi-flax.vercel.app/$1 [P,L]
 </IfModule>

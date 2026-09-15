@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   description: "Custom design, web, mobile, software, SaaS and AI automation services by CodeXmattriX.",
 };
 
-const designServices = [
+const designServices: [string, string, string[]][] = [
   ["UI/UX Design", "Clear, conversion-focused interfaces for websites, products and dashboards.", ["User flows", "Wireframes", "Responsive UI", "Design systems"]],
   ["Product Design", "Turn an early idea into a practical digital product experience.", ["Product thinking", "Prototypes", "UX validation", "Developer handoff"]],
   ["Branding", "A consistent visual identity that makes the product feel credible and memorable.", ["Visual direction", "Logo systems", "Brand assets", "Web-ready guidelines"]],
 ];
 
-const developmentServices = [
+const developmentServices: [string, string, string[]][] = [
   ["Web Development", "Fast, responsive websites and custom web applications built around your goals.", ["Next.js / React", "WordPress", "Shopify", "Custom integrations"]],
   ["Mobile Apps", "Mobile experiences designed for real users, business workflows and long-term maintenance.", ["App architecture", "UI implementation", "API integration", "Release support"]],
   ["SaaS & Software", "Purpose-built software for workflows that off-the-shelf tools cannot handle.", ["Dashboards", "Authentication", "APIs", "Scalable architecture"]],

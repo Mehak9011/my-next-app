@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Flexible engagement models for custom digital product development.",
 };
 
-const models = [
+const models: [string, string, string, string[]][] = [
   ["01", "Fixed-Scope", "Best when the requirements and deliverables are clear.", ["Defined scope and milestones", "Design + development plan", "QA and launch support", "Clear project ownership"]],
   ["02", "Time & Material", "Best when the product needs to evolve as we learn.", ["Flexible priorities", "Ongoing engineering capacity", "Iterative delivery", "Transparent progress"]],
   ["03", "Monthly Retainer", "Best for teams that need a long-term product partner.", ["Reserved team capacity", "Continuous improvements", "Maintenance and support", "Priority planning"]],

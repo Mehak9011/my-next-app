@@ -1,36 +1,59 @@
 # ============================================================
-# Headless WordPress — reverse proxy the public frontend to Next.js
+# Headless WordPress — serve the public frontend from Next.js
 # ------------------------------------------------------------
 # Upload this file to the WordPress web root as:  .htaccess
+# (Hostinger hPanel -> File Manager -> public_html -> .htaccess).
+# REPLACE the whole file content with ONE of the variants below
+# (then test https://cms.codexmattrix.com/about/).
 #
 # WHAT IT DOES
-#   Same as htaccess-frontend-redirect.txt, EXCEPT the browser
-#   address bar KEEPS https://cms.codexmattrix.com/about/ while
-#   Vercel/Next.js renders the page (reverse proxy, flag [P]).
-#
-# REQUIREMENT: Apache mod_proxy enabled on the host. Many shared
-# hosting plans (GoDaddy/cPanel) DISABLE mod_proxy for external
-# hosts — in that case use the redirect variant, or the
-# Cloudflare Worker (cloudflare-worker.js) which achieves the
-# same "keep the URL" behaviour without mod_proxy.
-#
-# 1. Replace CODEXMATTRIX_DOMAIN with your live domain.
+#   • WordPress backend / API stays on WordPress:
+#       /wp-admin, /wp-login.php, /wp-json, /graphql, /wp-content,
+#       /wp-includes, /wp-cron.php, /xmlrpc.php, /.well-known/
+#   • EVERY OTHER URL (/, /about/, /services/, /_next/static/...)
+#     is rendered by the Next.js site on Vercel while the browser
+#     KEEPS the cms.codexmattrix.com/... URL.
 # ============================================================
 
-<IfModule mod_proxy.c>
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# VARIANT 1 (RECOMMENDED — works on Hostinger without mod_proxy)
+# PHP reverse proxy -> requires wordpress/proxy.php uploaded too.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+<IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
 
-# --- Backend / API / assets stay on WordPress -----------------
-RewriteRule ^index\.php$ - [L]
-RewriteRule ^wp-admin/ - [L]
-RewriteRule ^wp-login\.php - [L]
-RewriteRule ^wp-json/ - [L]
-RewriteRule ^graphql - [L]
-RewriteRule ^wp-content/ - [L]
-RewriteRule ^wp-includes/ - [L]
-RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$ - [L,NC]
+# --- Never proxy WordPress internals or the proxy script itself ---
+RewriteCond %{REQUEST_URI} !^/(proxy\.php|index\.php|wp-admin/?|wp-login\.php|wp-json|graphql|wp-content/|wp-includes/|wp-cron\.php|xmlrpc\.php|\.well-known/|readme\.html|license\.txt)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ /proxy.php?_cmx=1 [L,QSA]
 
-# --- Proxy everything else to the Next.js app ------------------
-RewriteRule ^(.*)$ https://my-next-app-phi-flax.vercel.app/$1 [P,L]
+# --- Standard WordPress front controller (admin/API handling) ---
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule . /index.php [L]
 </IfModule>
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# VARIANT 2 (only if your host enables Apache mod_proxy)
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# <IfModule mod_proxy.c>
+# RewriteEngine On
+# RewriteBase /
+#
+# # --- Backend / API stay on WordPress ---
+# RewriteRule ^index\.php$ - [L]
+# RewriteRule ^wp-admin/ - [L]
+# RewriteRule ^wp-login\.php - [L]
+# RewriteRule ^wp-json/ - [L]
+# RewriteRule ^graphql - [L]
+# RewriteRule ^wp-content/ - [L]
+# RewriteRule ^wp-includes/ - [L]
+# RewriteRule ^wp-cron\.php - [L]
+# RewriteRule ^xmlrpc\.php - [L]
+# RewriteRule ^\.well-known/ - [L]
+# RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|pdf)$ - [L,NC]
+#
+# # --- Everything else → the Next.js app on Vercel ---
+# RewriteRule ^(.*)$ https://my-next-app-phi-flax.vercel.app/$1 [P,L]
+# </IfModule>

@@ -108,7 +108,7 @@ Copy `.env.example` to `.env.local`. Values:
 | Variable | Local | Vercel (Production) |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_NAME` | `CodeXmattriX` | `CodeXmattriX` |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | `https://your-app.vercel.app` → your domain |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | `https://my-next-app-phi-flax.vercel.app` (or your custom domain) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | `917832820005` | `917832820005` |
 | `WORDPRESS_ENABLED` | `true` | `true` |
 | `WORDPRESS_GRAPHQL_URL` | `https://cms.codexmattrix.com/graphql` | same |
@@ -208,7 +208,28 @@ node scripts/verify-wordpress.mjs
 
 ## 9. Making the WordPress URL show the Next.js page (#4 and #12)
 
-Two clean ways — pick one. Full files are in `wordpress/`.
+Three clean ways — pick one. **Option C (PHP reverse proxy) is the CHOSEN
+wiring for this project** — it works on Hostinger shared hosting without
+Cloudflare, without `mod_proxy` and without any DNS/nameserver change.
+Full files are in `wordpress/`.
+
+### Option C — PHP reverse proxy (CHOSEN — Hostinger-safe, keeps the CMS URL)
+
+The browser **keeps** `https://cms.codexmattrix.com/about/` while the exact
+Next.js page renders:
+
+1. Upload `wordpress/proxy.php` to `public_html/` on the CMS host.
+2. Replace the site-root `.htaccess` with Variant 1 from
+   `wordpress/htaccess-frontend-proxy.txt` (routes every public URL —
+   including `/_next/static`, `/images`, `/icon.svg` — to `proxy.php`).
+3. Open `https://cms.codexmattrix.com/about/` — you get
+   `app/about/page.tsx` rendered by Vercel, with the CMS URL in the address
+   bar. `/wp-admin`, `/graphql`, `/wp-json` and `/wp-content` are excluded and
+   keep working on WordPress.
+
+`proxy.php` fetches the same path from `https://my-next-app-phi-flax.vercel.app`
+and streams it back (status, content-type and cache-control preserved). No
+Cloudflare, no nameserver/DNS change, no hosting feature required.
 
 ### Option A — `.htaccess` 301 redirect (recommended, works everywhere)
 
@@ -241,12 +262,11 @@ RewriteRule ^(.*)$ https://CODEXMATTRIX_DOMAIN/$1 [R=301,L]
 Result: `https://cms.codexmattrix.com/about/` **301-redirects to**
 `https://codexmattrix.com/about/`, where Vercel renders the Next.js page.
 
-### Option B — reverse proxy / Cloudflare Worker (keeps the CMS URL)
+### Option B — alternative keep-URL options (mod_proxy / Cloudflare Worker)
 
-If you want the browser to **keep** `https://cms.codexmattrix.com/about/` while
-Next.js renders it:
-- `wordpress/htaccess-frontend-proxy.txt` — Apache `mod_proxy` (`[P]` flag).
-  Requires the host to allow it (many shared hosts don't).
+If you cannot upload a PHP file and still want to **keep** the CMS URL:
+- `wordpress/htaccess-frontend-proxy.txt` — Variant 2 uses Apache `mod_proxy`
+  (`[P]` flag). Requires the host to enable it (many shared hosts don't).
 - `wordpress/cloudflare-worker.js` — same "keep the URL" behaviour without
   mod_proxy. Put the `cms` subdomain on Cloudflare, add a route
   `cms.codexmattrix.com/*`, set `MAIN_DOMAIN`, deploy. WordPress admin + API are
@@ -262,22 +282,26 @@ Next.js renders it:
 | Job | Need |
 | --- | --- |
 | Next.js reads the URL list | **WPGraphQL** plugin (only plugin required) |
-| A WordPress URL displays the Next.js page | **Rewrite/proxy** — `.htaccess` redirect (Option A) or proxy/Worker (Option B) |
+| A WordPress URL displays the Next.js page | **Proxy** — `proxy.php` + `.htaccess` (Option C, CHOSEN), redirect (Option A) or Worker (Option B) |
 | Building the page in WordPress | **No** — that's exactly what you're avoiding (no ACF, no Elementor) |
 
 ## 11. Vercel configuration (#11)
 
 1. **Import the repo** — https://vercel.com/new → Import Git Repository →
-   your `my-next-app` repo. Vercel auto-detects **Next.js** (also set in
-   `vercel.json`).
+   your `my-next-app` repo. The Vercel project is `my-next-app-phi-flax` and
+   its live URL is `https://my-next-app-phi-flax.vercel.app`. Vercel
+   auto-detects **Next.js** (also pinned in `vercel.json`).
 2. **Environment variables** — Project → Settings → Environment Variables:
    add every row from the table in section 5 (use the same values for
    Production + Preview + Development).
-3. **Deploy** — click Deploy. Every push to `main` rebuilds; every PR gets a
-   preview URL. Change env vars → **Redeploy** once for them to take effect.
-4. **Domain** — Project → Settings → Domains → add `codexmattrix.com` (and
-   `www`). Follow Vercel's DNS instructions (point `A`/`CNAME` records to Vercel).
-5. After adding the domain, update `NEXT_PUBLIC_SITE_URL` to `https://codexmattrix.com`.
+3. **CI + Deploy** — GitHub Actions (`.github/workflows/ci.yml`) runs
+   `npm ci` + typecheck + lint + build on every push/PR. Vercel deploys every
+   push to `main` (production) and every PR (preview). Change env vars →
+   **Redeploy** once for them to take effect.
+4. **Domain (optional)** — Project → Settings → Domains → add
+   `codexmattrix.com` (and `www`) when you own it. Follow Vercel's DNS
+   instructions (point `A`/`CNAME` records to Vercel).
+5. After adding a domain, update `NEXT_PUBLIC_SITE_URL` to it.
 
 `vercel.json` already pins the framework, build/install commands and security
 headers — nothing else to configure.
@@ -285,16 +309,16 @@ headers — nothing else to configure.
 ## 12. Domain configuration (#12)
 
 ```
-codexmattrix.com      →  Vercel  (Next.js = the live site)
-www.codexmattrix.com  →  Vercel  (same app)
-cms.codexmattrix.com  →  WordPress host (editing + GraphQL API only)
+my-next-app-phi-flax.vercel.app  →  Vercel  (live Next.js URL today)
+codexmattrix.com      (optional) →  Vercel  (if/when you attach the domain)
+cms.codexmattrix.com             →  WordPress host (editing + GraphQL API)
 ```
 
 Flow when someone opens `https://cms.codexmattrix.com/about/`:
-WordPress host receives it → `.htaccess` (Option A) redirects to
-`https://codexmattrix.com/about/` → Vercel renders `app/about/page.tsx`.
-With Option B the same URL is reverse-proxied to Vercel without changing the
-address bar.
+WordPress host receives it → `.htaccess` sends it to `proxy.php` (Option C)
+→ the proxy fetches the same path from `https://my-next-app-phi-flax.vercel.app`
+→ the exact Next.js page renders while the browser **keeps** the
+`cms.codexmattrix.com/about/` URL.
 
 ## 13. Deployment workflow — local → WordPress → GitHub → Vercel → live
 
@@ -310,17 +334,19 @@ npm run lint
 npm run build                    # must pass before pushing
 node scripts/verify-wordpress.mjs# confirms the live CMS is ready
 
-# 3. Push to GitHub (Vercel auto-deploys main)
+# 3. Push to GitHub — CI runs, then Vercel auto-deploys main
 git add .
-git commit -m "feat: headless WP — About & Contact pages in Next.js"
+git commit -m "feat: full-headless reverse proxy via WordPress domain"
 git push origin main
 
 # 4. Vercel
-#    - env vars set once (section 5)
-#    - domain added once (section 12)
-#    - every push redeploys automatically
+#    - env vars set once (section 5): Project → Settings → Environment Variables
+#    - domain optional (section 12) — today live at my-next-app-phi-flax.vercel.app
+#    - GitHub Actions verifies every push/PR; every push to main redeploys
 
-# 5. WordPress one-time setup (section 3) + .htaccess/Worker (section 9)
+# 5. WordPress one-time setup (section 3) + frontend hand-off (section 9, Option C)
+#    - upload wordpress/proxy.php → public_html/
+#    - replace the site-root .htaccess with Variant 1 of htaccess-frontend-proxy.txt
 ```
 
 **Content/URL cadence after launch**
@@ -345,9 +371,10 @@ git push origin main
 - **WordPress URL** (`https://cms.codexmattrix.com/about/`) — the URL registered
   in WordPress. It's the *content-editing/API domain*; when a visitor hits a page
   URL there, it redirects/proxies to the Next.js site (section 9).
-- **Next.js / Vercel URL** (`https://codexmattrix.com/about/`) — the URL the
-  browser lands on, where Vercel runs Next.js and renders the actual page. This
-  is your public, SEO-facing domain.
+- **Next.js / Vercel URL** (`https://my-next-app-phi-flax.vercel.app/about/`,
+  or `codexmattrix.com/about/` once the domain is attached) — the URL where
+  Vercel runs Next.js and renders the actual page. With the proxy (Option C)
+  the browser stays on the WordPress-domain URL and still gets these pages.
 
 > In short: WordPress decides **which URLs exist**; Next.js decides **what they
 > look like**; Vercel serves the result.

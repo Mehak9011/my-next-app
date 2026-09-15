@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "A clear five-step process from discovery to launch.",
 };
 
-const steps = [
+const steps: [string, string, string, string[]][] = [
   ["01", "Discovery", "We understand the business, users, technical constraints and what success needs to look like.", ["Goals & requirements", "Technical direction", "Scope & priorities"]],
   ["02", "Design", "We turn the requirements into an experience that is easy to understand, use and build.", ["User journeys", "Wireframes & UI", "Responsive states"]],
   ["03", "Development", "The approved experience becomes a working product with clean, maintainable implementation.", ["Frontend development", "Backend / API work", "Integrations"]],

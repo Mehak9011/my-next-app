@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/app/components/layout/Header";
 import Footer from "@/app/components/layout/Footer";
 import WhatsAppFab from "@/app/components/layout/WhatsAppFab";
+import IframeHeightReporter from "@/app/components/layout/IframeHeightReporter";
 
 // Brand fonts — self-hosted via next/font (no render-blocking Google request).
 // The CSS variables below feed the Tailwind theme (--font-sans / --font-display).
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${manrope.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-white font-sans text-ink">
+        <IframeHeightReporter />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

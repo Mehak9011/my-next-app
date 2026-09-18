@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import AboutCta from "@/app/components/about/AboutCta";
-import AboutHero from "@/app/components/about/AboutHero";
-import Mission from "@/app/components/about/Mission";
-import Story from "@/app/components/about/Story";
-import Team from "@/app/components/about/Team";
-import Values from "@/app/components/about/Values";
-import Stats from "@/app/components/home/Stats";
-import { defaultAboutContent } from "@/app/lib/content/about";
+import ComingSoonPage from "@/app/components/ComingSoonPage";
 
 export const metadata: Metadata = {
   title: "About",
@@ -15,27 +8,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * About Us.
+ * About — "Coming Soon" for now.
  *
- * Designed and built 100% in Next.js (components + Tailwind + Reveal
- * animations live under app/components/about/*). Content is bundled
- * in Next.js too (app/lib/content/about.ts).
+ * The full About design (app/components/about/*) and its content
+ * (app/lib/content/about.ts) are kept in the project untouched and will
+ * be re-enabled when the inner pages are designed.
  *
- * WordPress contributes exactly one thing: the published "about" page
- * that registers the /about/ URL — see HEADLESS-WORDPRESS-GUIDE.md.
+ * WordPress still registers the /about/ URL — see HEADLESS-WORDPRESS-GUIDE.md.
  */
 export default function AboutPage() {
-  const content = defaultAboutContent;
-
-  return (
-    <>
-      <AboutHero hero={content.hero} />
-      <Story story={content.story} />
-      <Mission mission={content.mission} />
-      <Stats stats={content.stats} />
-      <Values values={content.values} />
-      <Team team={content.team} />
-      <AboutCta cta={content.cta} />
-    </>
-  );
+  return <ComingSoonPage title="About" />;
 }

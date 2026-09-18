@@ -44,5 +44,5 @@ export default async function WordPressPageRoute({ params }: Props) {
   }
 
   const title = lookup.ok && lookup.page ? lookup.page.title : humanize(path);
-  return <RegisteredPage slug={path} title={title} />;
+  return <RegisteredPage title={title} />;
 }

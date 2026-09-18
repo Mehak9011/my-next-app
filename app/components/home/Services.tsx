@@ -17,7 +17,8 @@ export default function Services({
         <Kicker>Services</Kicker>
         <h2 className="section-title">{heading}</h2>
 
-        <Reveal className="mt-5 grid grid-cols-1 gap-10 md:grid-cols-2">
+        {/* Split at 760px, matching the reference design's breakpoint. */}
+        <Reveal className="mt-5 grid grid-cols-1 gap-10 min-[760px]:grid-cols-2">
           {groups.map((group) => (
             <div key={group.title}>
               <h3 className="mb-[18px] text-[15px] uppercase tracking-[0.06em] text-slate">

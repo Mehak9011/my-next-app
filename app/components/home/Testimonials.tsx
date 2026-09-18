@@ -17,7 +17,8 @@ export default function Testimonials({
         <Kicker>Testimonials</Kicker>
         <h2 className="section-title mb-10">{heading}</h2>
 
-        <Reveal className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* 3-up from 860px, matching the reference design's breakpoint. */}
+        <Reveal className="grid grid-cols-1 gap-5 min-[860px]:grid-cols-3">
           {items.map((testimonial) => (
             <figure
               key={testimonial.author}

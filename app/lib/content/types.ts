@@ -9,7 +9,7 @@
  */
 export interface Shot {
   id: string;
-  /** Local path (public/) or absolute URL served by WordPress. */
+  /** Local path (public/), a WordPress media URL, or a remote CDN URL. */
   image: string | null;
   /** Two lines, separated by "\n" (rendered as <br />). */
   label: string;

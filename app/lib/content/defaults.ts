@@ -18,22 +18,29 @@ export const defaultHomeContent: HomeContent = {
   shots: [
     {
       id: "ehr",
-      image: "/images/shot-ehr.svg",
+      // Reference design photo. w=900 covers the 380px card at 2x DPR
+      // (including the 1.03 hover scale); `auto=format` serves WebP/AVIF.
+      image:
+        "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?auto=format&fit=crop&w=900&q=80",
       label: "MMJ Docs EHR\nPatient Booking Dashboard",
     },
     {
       id: "card",
-      image: "/images/shot-card.svg",
+      image:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80",
       label: "ApplyMMJCard\nWebsite Placeholder",
     },
     {
       id: "cbd",
-      image: "/images/shot-cbd.svg",
+      image:
+        "https://images.unsplash.com/photo-1672676006146-cbde97148137?auto=format&fit=crop&w=900&q=80",
       label: "CBD E-commerce\nStorefront Placeholder",
     },
     {
       id: "app",
-      image: "/images/shot-app.svg",
+      // Intentionally the same photo as "card" — matches the reference design.
+      image:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80",
       label: "Mobile App\nUI Placeholder",
     },
     {
@@ -79,14 +86,18 @@ export const defaultHomeContent: HomeContent = {
         title: "Healthcare & Telehealth",
         description:
           "Live EHR and patient booking platform — from compliance to UX, end to end.",
-        image: "/images/industry-health.svg",
+        // 300px-tall card spanning half of the 1180px grid -> 1400px is
+        // the reference width (2x DPR incl. the 1.05 hover zoom).
+        image:
+          "https://images.unsplash.com/photo-1758691463620-188ca7c1a04f?auto=format&fit=crop&w=1400&q=90",
         link: site.links.caseStudies,
       },
       {
         title: "CBD & Cannabis",
         description:
           "Age verification, compliance-aware payments, ad-restriction workarounds — solved.",
-        image: "/images/industry-cbd.svg",
+        image:
+          "https://images.unsplash.com/photo-1672676006146-cbde97148137?auto=format&fit=crop&w=1400&q=90",
         link: site.links.caseStudies,
       },
     ],

@@ -28,7 +28,7 @@ export default function Hero({
           {hero.subtitle}
         </p>
 
-        <div className="mb-4 flex flex-wrap items-center justify-center gap-[14px]">
+        <div className="mb-5 flex flex-wrap items-center justify-center gap-[14px]">
           <Link href={site.links.contact} className="btn-primary">
             Book a Free Consultation
           </Link>

@@ -2,40 +2,65 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Container from "@/app/components/ui/Container";
 import { navLinks, site } from "@/app/lib/site";
 
 /**
  * Sticky site header with brand logo, desktop nav (≥860px) and a
  * mobile hamburger menu. Fully matches the original design.
+ *
+ * The nav links react to hover and to the current route: the desktop link
+ * grows a crimson underline, the mobile row turns crimson with a left bar
+ * (styles live in globals.css under "HEADER NAV").
  */
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // First nav entry that matches the current route (trailing slash safe).
+  // navLinks can point two labels at the same URL — only the first is marked.
+  const activeIndex = navLinks.findIndex(
+    (link) => pathname === link.href || pathname.startsWith(`${link.href}/`)
+  );
 
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-white/90 backdrop-blur">
       <Container className="flex h-[76px] items-center justify-between">
-        {/* Brand logo */}
+        {/* Brand logo — dark/red variant so it reads on the white header. */}
         <Link
           href="/"
-          className="text-[21px] font-bold tracking-tight text-ink"
+          className="flex flex-shrink-0 items-center"
           onClick={() => setOpen(false)}
         >
-          Code<span className="text-crimson">X</span>mattri
-          <span className="text-crimson">x</span>
+          <img
+            src="/images/logo-1-2.svg"
+            alt={site.name}
+            width={840}
+            height={136}
+            className="h-[32px] w-auto sm:h-[38px]"
+            decoding="async"
+          />
         </Link>
 
         {/* Desktop nav (≥860px) */}
         <nav className="hidden min-[860px]:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-[14.5px] font-medium text-slate transition-colors hover:text-ink"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link, index) => {
+            const active = index === activeIndex;
+
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={`header-link text-[14.5px] font-medium ${
+                  active ? "is-active" : ""
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -76,16 +101,23 @@ export default function Header() {
       {open && (
         <div className="border-t border-line bg-white min-[860px]:hidden">
           <nav className="flex flex-col px-8 py-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="border-b border-line py-3 text-[15px] font-medium text-slate transition-colors hover:text-ink"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link, index) => {
+              const active = index === activeIndex;
+
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`header-link-mobile border-b border-line py-3 text-[15px] font-medium ${
+                    active ? "is-active" : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <Link
               href={site.links.contact}
               onClick={() => setOpen(false)}

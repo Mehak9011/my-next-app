@@ -114,6 +114,60 @@ the proxy setup (section 9 · Option C) and the deployment workflow.
 
 ---
 
+## Animations & custom cursor
+
+Everything is **zero-dependency** — no animation library, no extra bundle
+weight. The animation layer is CSS keyframes + `IntersectionObserver`, in
+line with the existing `Reveal` component.
+
+| Piece | File | What it does |
+| --- | --- | --- |
+| Custom cursor | `app/components/layout/CustomCursor.tsx` | Crimson dot + trailing ring; grows over links, fills and shows a label over `[data-cursor="view"]` cards |
+| Header nav states | `app/components/layout/Header.tsx` | Hover + current-page (via `usePathname`) crimson colour, with a growing underline (desktop) / accent bar (mobile) — header menu only |
+| Scroll progress | `app/components/ui/ScrollProgress.tsx` | 3px gradient bar pinned to the top of the viewport |
+| Reveal variants | `app/components/ui/Reveal.tsx` | `up · down · left · right · scale · fade · mask` + `delay` for staggering |
+| Count-up stats | `app/components/ui/CountUp.tsx` | Animates `0 → value` when the stats bar enters the viewport |
+| 3D tilt | `app/components/ui/TiltCard.tsx` | Pointer-follow tilt wrapping the industry cards |
+| Hero backdrop | `app/components/home/HeroBackground.tsx` | Drifting grid + aurora blobs with pointer parallax |
+| Rotating word | `app/components/home/RotatingWord.tsx` | CSS-only capability rotator (`We build …`) |
+| Scroll cue | `app/components/home/ScrollCue.tsx` | Animated mouse indicator under the hero CTAs |
+
+Rules the implementation sticks to (all enforced in `app/globals.css`):
+
+- **`prefers-reduced-motion: reduce` disables every animation** — marquees,
+  entrance sequences, rotator, glows and hover transforms.
+- The custom cursor runs only on `(hover: hover) and (pointer: fine)`
+  devices; touch, keyboard and JS-off visitors keep the OS pointer, and
+  text fields keep the native caret. The native cursor is hidden through
+  the `has-custom-cursor` class, which only exists while the cursor runs.
+- Only `transform` / `opacity` / `clip-path` are animated, and the follow
+  loops (cursor, tilt, parallax, progress bar) write to the DOM inside
+  `requestAnimationFrame` instead of React state — nothing re-renders.
+
+---
+
+## Site icons (favicon)
+
+The brand icon comes from the CMS upload
+(`cms.codexmattrix.com/wp-content/uploads/2026/09/cropped-fabicon.webp`) and is
+**bundled locally** in `public/images/favicon.webp`, so the favicon never
+depends on the CMS being reachable.
+
+| File | Served as | Used by |
+| --- | --- | --- |
+| `public/images/favicon.webp` | `/images/favicon.webp` | modern browsers (declared in `app/layout.tsx` metadata) |
+| `app/favicon.ico` | `/favicon.ico` | legacy fallback + pinned tabs (16/32/48px, generated) |
+| `app/apple-icon.png` | `/apple-icon.png` | iOS / iPadOS home screen (180px, generated) |
+
+Regenerate the derived icons from any square source image:
+
+```bash
+node scripts/make-favicons.mjs                  # uses public/images/favicon.webp
+node scripts/make-favicons.mjs path/to/new.png  # or another square source
+```
+
+---
+
 ## Environment variables
 
 | Variable | Purpose |

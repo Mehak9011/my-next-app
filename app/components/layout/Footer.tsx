@@ -4,7 +4,7 @@ import { site } from "@/app/lib/site";
 
 /** Outlined wordmark words for the footer marquee. */
 const MARQUEE_WORDS: Array<{ plain: string; strong: string }> = [
-  { plain: "EX", strong: "MATTRIX" },
+  { plain: "CODE", strong: "XMATTRIX" },
   { plain: "CODE", strong: "XMATTRIX" },
 ];
 
@@ -49,18 +49,26 @@ export default function Footer() {
         <div className="mb-[60px] grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div>
-            <div className="ffoot-logo flex items-center gap-3">
-              <span
-                className="size-10 flex-shrink-0 rounded-md border-2 border-white"
-                aria-hidden="true"
+            <Link
+              href="/"
+              aria-label={`${site.name} — home`}
+              className="ffoot-logo inline-block transition-opacity hover:opacity-85"
+            >
+              {/* White brand logo (mark + wordmark) — reads on the dark
+                  footer background. Sourced from public/images. */}
+              <img
+                src="/images/logo-2.svg"
+                alt={site.name}
+                width={840}
+                height={136}
+                className="h-[34px] w-auto sm:h-[38px]"
+                loading="lazy"
+                decoding="async"
               />
-              <span className="mb-1 border-b-2 border-white pb-0.5 text-[22px] font-bold text-white">
-                CodeXmattriX
-              </span>
-            </div>
-            <p className="ml-[52px] mt-[6px] text-[10.5px] font-medium tracking-[0.18em] text-slate-light uppercase">
+            </Link>
+            {/* <p className="mt-3 text-[10.5px] font-medium tracking-[0.18em] text-slate-light uppercase">
               {site.taglineUppercase}
-            </p>
+            </p> */}
           </div>
 
           {/* The Agency */}

@@ -166,7 +166,8 @@ app/
 │   ├── home/                      # Home sections (existing)
 │   ├── layout/                    # Header, Footer, WhatsAppFab
 │   ├── pages/RegisteredPage.tsx   # Generic template used by the catch-all
-│   └── ui/                        # Container, Kicker, SectionHeader, Reveal
+│   └── ui/                        # Container, Kicker, SectionHeader, Reveal,
+│                                  # CountUp, TiltCard, ScrollProgress
 ├── lib/
 │   ├── site.ts                    # Business constants (contact, links)
 │   ├── wordpress.ts               # ★ WPGraphQL/REST client + home content
@@ -221,7 +222,7 @@ Next.js page renders:
 1. Upload `wordpress/proxy.php` to `public_html/` on the CMS host.
 2. Replace the site-root `.htaccess` with Variant 1 from
    `wordpress/htaccess-frontend-proxy.txt` (routes every public URL —
-   including `/_next/static`, `/images`, `/icon.svg` — to `proxy.php`).
+   including `/_next/static`, `/images`, `/favicon.ico` — to `proxy.php`).
 3. Open `https://cms.codexmattrix.com/about/` — you get
    `app/about/page.tsx` rendered by Vercel, with the CMS URL in the address
    bar. `/wp-admin`, `/graphql`, `/wp-json` and `/wp-content` are excluded and

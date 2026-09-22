@@ -48,17 +48,277 @@ a {
 }
 
 /* ================================================================
+   HEADER NAV — hover + current-page (active) states
+   Desktop links grow a crimson underline, the mobile rows turn crimson
+   with a left accent bar. Only the header menu uses these classes; the
+   logo and the "Book a Call" button are untouched.
+   ================================================================ */
+.header-link {
+  position: relative;
+  color: var(--color-slate);
+  transition: color 0.25s ease;
+}
+.header-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-crimson),
+    var(--color-crimson-light)
+  );
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.header-link:hover,
+.header-link:focus-visible,
+.header-link.is-active {
+  color: var(--color-crimson);
+}
+.header-link:hover::after,
+.header-link:focus-visible::after,
+.header-link.is-active::after {
+  transform: scaleX(1);
+}
+
+/* Mobile menu rows */
+.header-link-mobile {
+  position: relative;
+  color: var(--color-slate);
+  transition: color 0.25s ease, padding-left 0.25s ease;
+}
+.header-link-mobile::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--color-crimson),
+    var(--color-crimson-light)
+  );
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  transition: transform 0.3s ease;
+}
+.header-link-mobile:hover,
+.header-link-mobile:focus-visible,
+.header-link-mobile.is-active {
+  color: var(--color-crimson);
+  padding-left: 12px;
+}
+.header-link-mobile:hover::before,
+.header-link-mobile:focus-visible::before,
+.header-link-mobile.is-active::before {
+  transform: scaleY(1);
+}
+
+/* ================================================================
+   CUSTOM CURSOR (app/components/layout/CustomCursor.tsx)
+   The OS cursor is hidden ONLY while <html> carries
+   `.has-custom-cursor`, and that class is added by JS on
+   hover-capable/fine-pointer devices without reduced-motion.
+   Touch, keyboard, reduced-motion and JS-off users therefore keep
+   the native pointer.
+   ================================================================ */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none;
+}
+/* Text entry keeps a real caret cursor for usability. */
+html.has-custom-cursor input,
+html.has-custom-cursor textarea,
+html.has-custom-cursor select,
+html.has-custom-cursor [contenteditable="true"] {
+  cursor: text;
+}
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+  will-change: transform;
+}
+html.has-custom-cursor .cursor-dot,
+html.has-custom-cursor .cursor-ring {
+  display: block;
+}
+
+/* Solid crimson dot — tracks the pointer almost instantly. */
+.cursor-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--color-crimson);
+  box-shadow: 0 0 10px 1px rgba(230, 51, 41, 0.55);
+  transition: opacity 0.2s ease;
+}
+
+/* Trailing ring — lerps behind the dot (see CustomCursor.tsx). */
+.cursor-ring {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(230, 51, 41, 0.5);
+  background: rgba(230, 51, 41, 0.05);
+  transition: background 0.25s ease, border-color 0.25s ease,
+    box-shadow 0.25s ease, opacity 0.2s ease;
+}
+.cursor-ring[data-state="hover"] {
+  border-color: var(--color-crimson);
+  background: rgba(230, 51, 41, 0.12);
+}
+.cursor-ring[data-state="view"] {
+  border-color: var(--color-crimson);
+  background: var(--color-crimson);
+  box-shadow: 0 12px 30px -12px rgba(230, 51, 41, 0.85);
+}
+.cursor-ring[data-state="text"] {
+  border-color: rgba(20, 24, 29, 0.4);
+  background: transparent;
+}
+
+/* Orbit dot — makes the ring rotation readable on hover. */
+.cursor-ring-orbit {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cursor-ring-orbit::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--color-crimson);
+}
+.cursor-ring[data-state="hover"] .cursor-ring-orbit,
+.cursor-ring[data-state="view"] .cursor-ring-orbit {
+  opacity: 1;
+  animation: cursor-spin 2.6s linear infinite;
+}
+.cursor-ring[data-state="view"] .cursor-ring-orbit::before {
+  background: #fff;
+}
+
+/* Optional label (data-cursor-label) shown inside the ring. */
+.cursor-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0;
+  /* Counter-scaled by JS so the text stays crisp while the ring grows. */
+  transform: scale(var(--cursor-label-scale, 1));
+  transition: opacity 0.18s ease;
+}
+.cursor-ring[data-state="view"] .cursor-ring-label {
+  opacity: 1;
+}
+
+@keyframes cursor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================================================
+   SCROLL PROGRESS (app/components/ui/ScrollProgress.tsx)
+   ================================================================ */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 130;
+  pointer-events: none;
+}
+.scroll-progress-bar {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(
+    90deg,
+    var(--color-crimson),
+    var(--color-crimson-light) 55%,
+    var(--color-ink)
+  );
+}
+
+/* ================================================================
    SCROLL-REVEAL (driven by app/components/ui/Reveal.tsx)
+   The `.reveal-*` classes below describe the START state only;
+   `.reveal.is-visible` always resolves to the settled state.
    ================================================================ */
 .reveal {
   opacity: 0;
-  transform: translateY(26px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transform: translate3d(0, 26px, 0);
+  transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+    clip-path 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: opacity, transform;
 }
+
+/* --- Reveal variants (initial state) --- */
+.reveal-up {
+  transform: translate3d(0, 30px, 0);
+}
+.reveal-down {
+  transform: translate3d(0, -26px, 0);
+}
+.reveal-left {
+  transform: translate3d(-44px, 0, 0);
+}
+.reveal-right {
+  transform: translate3d(44px, 0, 0);
+}
+.reveal-scale {
+  transform: scale(0.94) translate3d(0, 18px, 0);
+}
+.reveal-fade {
+  transform: translate3d(0, 0, 0);
+}
+/* "mask" wipes the block open instead of fading it. */
+.reveal-mask {
+  opacity: 1;
+  transform: translate3d(0, 16px, 0);
+  clip-path: inset(0 0 100% 0);
+}
+
+/* --- Settled state (must stay after the variants) --- */
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.reveal-mask.is-visible {
+  clip-path: inset(0 0 -2% 0);
 }
 
 /* ================================================================
@@ -285,6 +545,33 @@ a {
 }
 .faq-answer-inner {
   min-height: 0;
+  opacity: 0;
+  transform: translate3d(0, -6px, 0);
+  transition: opacity 0.35s ease 0.06s, transform 0.35s ease 0.06s;
+}
+.faq-answer.open .faq-answer-inner {
+  opacity: 1;
+  transform: none;
+}
+
+/* Question row: colour shift on hover/focus. */
+.faq-question {
+  transition: color 0.25s ease;
+}
+.faq-item:hover .faq-question,
+.faq-item:focus-visible .faq-question {
+  color: var(--color-crimson);
+}
+
+/* ================================================================
+   CLIENT LOGO STRIP
+   ================================================================ */
+.client-logo {
+  display: inline-block;
+  transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+}
+.client-logo:hover {
+  transform: translate3d(0, -3px, 0);
 }
 
 /* ================================================================
@@ -304,6 +591,570 @@ a {
 }
 
 /* ================================================================
+   HOME — ENTRANCE / HERO
+   Load-time staggering only, so these are pure CSS animations and
+   work in Server Components. Delays come from inline styles.
+   ================================================================ */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.anim-rise {
+  opacity: 0;
+  animation: riseIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Aurora / grid backdrop behind the hero. */
+.hero-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-bg-grid {
+  position: absolute;
+  inset: -12%;
+  background-image: linear-gradient(
+      to right,
+      rgba(20, 24, 29, 0.055) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(20, 24, 29, 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 68% 58% at 50% 28%,
+    #000 0%,
+    transparent 76%
+  );
+  mask-image: radial-gradient(
+    ellipse 68% 58% at 50% 28%,
+    #000 0%,
+    transparent 76%
+  );
+  animation: gridDrift 30s linear infinite;
+}
+@keyframes gridDrift {
+  to {
+    transform: translate3d(64px, 64px, 0);
+  }
+}
+
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.6;
+}
+.hero-blob-1 {
+  --blob-m: 1;
+  width: 520px;
+  height: 520px;
+  top: -180px;
+  left: -140px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(230, 51, 41, 0.4),
+    transparent 70%
+  );
+  animation: blobFloat 18s ease-in-out infinite alternate;
+}
+.hero-blob-2 {
+  --blob-m: -0.6;
+  width: 620px;
+  height: 620px;
+  top: -260px;
+  right: -200px;
+  background: radial-gradient(
+    circle at 60% 40%,
+    rgba(26, 37, 48, 0.32),
+    transparent 72%
+  );
+  animation: blobFloat 23s ease-in-out infinite alternate-reverse;
+}
+.hero-blob-3 {
+  --blob-m: 0.8;
+  width: 460px;
+  height: 460px;
+  bottom: -280px;
+  left: 34%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(230, 51, 41, 0.26),
+    transparent 70%
+  );
+  animation: blobFloat 27s ease-in-out infinite alternate;
+}
+@keyframes blobFloat {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(
+        calc(var(--hero-px, 0px) * var(--blob-m, 1)),
+        calc(var(--hero-py, 0px) * var(--blob-m, 1) + 28px),
+        0
+      )
+      scale(1.08);
+  }
+}
+
+/* Kicker: pulsing dot + gradient shimmer on the label. */
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.hero-kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-crimson);
+  animation: pulseRing 2.4s ease-out infinite;
+}
+@keyframes pulseRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(230, 51, 41, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 11px rgba(230, 51, 41, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 51, 41, 0);
+  }
+}
+.hero-kicker-text {
+  background: linear-gradient(
+    100deg,
+    var(--color-crimson) 0%,
+    #ff6f63 32%,
+    var(--color-crimson) 55%,
+    var(--color-crimson-light) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 6s ease-in-out infinite;
+}
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Hero title: one masked span per word, rising in sequence.
+   The masks stay baseline-aligned (bottom padding keeps descenders out of
+   the clip) and the inner span travels far enough to stay hidden at rest. */
+.hero-word-mask {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+}
+.hero-word {
+  display: inline-block;
+  transform: translate3d(0, 140%, 0);
+  animation: wordRise 0.95s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+@keyframes wordRise {
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Rotating capability word (CSS-only, no JS). */
+.rotator {
+  position: relative;
+  display: inline-block;
+  vertical-align: bottom;
+}
+.rotator-sizer {
+  visibility: hidden;
+}
+.rotator-list {
+  position: absolute;
+  inset: 0;
+}
+.rotator-item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  opacity: 0;
+  font-weight: 700;
+  color: var(--color-crimson);
+  animation: rotatorSwap 10.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+@keyframes rotatorSwap {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.5em, 0);
+  }
+  4% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  26% {
+    opacity: 0;
+    transform: translate3d(0, -0.5em, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0.5em, 0);
+  }
+}
+
+/* Animated "scroll" cue. */
+.scroll-cue {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 40px;
+  margin: 30px auto 0;
+  border: 1.5px solid rgba(20, 24, 29, 0.16);
+  border-radius: 14px;
+}
+.scroll-cue-dot {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 4px;
+  height: 8px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--color-crimson);
+  animation: scrollDot 1.9s ease-in-out infinite;
+}
+@keyframes scrollDot {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 16px, 0);
+    opacity: 0;
+  }
+}
+
+/* ================================================================
+   HOME — SERVICE ROWS
+   ================================================================ */
+.service-row {
+  position: relative;
+}
+/* Growing accent bar on hover. */
+.service-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--color-crimson),
+    var(--color-crimson-light)
+  );
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  transition: transform 0.35s ease;
+}
+.service-row:hover::before,
+.service-row:focus-within::before {
+  transform: scaleY(1);
+}
+.service-label,
+.service-arrow {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+.service-row:hover .service-label,
+.service-row:focus-within .service-label {
+  transform: translate3d(10px, 0, 0);
+}
+.service-row:hover .service-arrow,
+.service-row:focus-within .service-arrow {
+  transform: translate3d(8px, 0, 0);
+}
+
+/* ================================================================
+   HOME — INDUSTRY CARDS
+   ================================================================ */
+/* 3D tilt wrapper (app/components/ui/TiltCard.tsx) — rotation is written
+   to this element by JS, children keep their own hover transforms. */
+.tilt-wrap {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.industry-card-img {
+  position: relative;
+}
+/* Diagonal light sweep across the photo on hover. */
+.industry-card-img::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 65%
+  );
+  transform: translate3d(-130%, 0, 0);
+  transition: transform 0.85s ease;
+  pointer-events: none;
+}
+.industry-card:hover .industry-card-img::after {
+  transform: translate3d(130%, 0, 0);
+}
+.industry-arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+.industry-card:hover .industry-arrow,
+.industry-link:focus-visible .industry-arrow {
+  transform: translate3d(6px, 0, 0);
+}
+
+/* ================================================================
+   HOME — TESTIMONIAL CARDS
+   ================================================================ */
+.quote-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s ease, box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+.quote-card::before {
+  content: "\201C";
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  font-family: var(--font-display);
+  font-size: 96px;
+  line-height: 1;
+  color: var(--color-crimson);
+  opacity: 0.09;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.quote-card:hover {
+  transform: translate3d(0, -5px, 0);
+  border-color: rgba(230, 51, 41, 0.28);
+  box-shadow: 0 26px 46px -28px rgba(15, 22, 32, 0.38);
+}
+.quote-card:hover::before {
+  opacity: 0.16;
+  transform: translate3d(0, 4px, 0);
+}
+.quote-card:hover .avatar {
+  box-shadow: 0 0 0 6px rgba(230, 51, 41, 0.12);
+}
+.avatar {
+  transition: box-shadow 0.35s ease;
+}
+
+/* ================================================================
+   HOME — FINAL CTA
+   ================================================================ */
+.cta-card {
+  position: relative;
+  overflow: hidden;
+}
+.cta-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 54px 54px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 60% 70% at 50% 0%,
+    #000 0%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    ellipse 60% 70% at 50% 0%,
+    #000 0%,
+    transparent 78%
+  );
+  pointer-events: none;
+}
+.cta-glow {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  top: -300px;
+  left: 50%;
+  margin-left: -260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(230, 51, 41, 0.5),
+    transparent 70%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  animation: ctaGlow 12s ease-in-out infinite alternate;
+}
+@keyframes ctaGlow {
+  from {
+    transform: translate3d(-60px, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  to {
+    transform: translate3d(60px, 22px, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* ================================================================
+   CONTACT — process timeline
+   Numbered vertical steps that collapse to a centered column on
+   narrow viewports, matching the home page reveal/stagger pattern.
+   ================================================================ */
+@media (max-width: 600px) {
+  .contact-process-step {
+    flex-direction: column;
+    text-align: center;
+  }
+  .contact-process-step-number {
+    margin-bottom: 12px;
+  }
+}
+
+/* ================================================================
+   HOME — STATS BAR
+   Even 2-up / 4-up grid with hairline dividers. The crimson accent hugs
+   each number's own width (so no stray floating dash) and wipes in
+   left-to-right when the item scrolls into view.
+   ================================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 34px 18px;
+}
+.stat-item {
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.stat-number {
+  position: relative;
+  display: inline-block;
+}
+/* .stat-number::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-crimson),
+    var(--color-crimson-light)
+  );
+  transform: scaleX(1);
+  transform-origin: 0 50%;
+  transition: transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 0.25s;
+} */
+/* Hidden only while the wrapping Reveal is still waiting to enter. */
+.reveal:not(.is-visible) .stat-number::after {
+  transform: scaleX(0);
+}
+.stat-label {
+  margin-top: 22px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-slate);
+}
+
+/* 4-up with hairline dividers once there is room for it. */
+@media (min-width: 760px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  .stat-item {
+    padding: 2px 24px;
+    border-left: 1px solid var(--color-line);
+  }
+  .stat-item:first-child {
+    border-left: 0;
+  }
+}
+
+/* ================================================================
+   BUTTONS — shine sweep (added on top of the base button styles)
+   ================================================================ */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  transform: translate3d(-160%, 0, 0) skewX(-18deg);
+  transition: transform 0.65s ease;
+  pointer-events: none;
+}
+.btn-primary:hover::after,
+.btn-primary:focus-visible::after {
+  transform: translate3d(320%, 0, 0) skewX(-18deg);
+}
+
+/* ================================================================
    RESPONSIVE + REDUCED MOTION
    ================================================================ */
 @media (max-width: 760px) {
@@ -313,12 +1164,548 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Reveal: land straight in the settled state, no transitions. */
   .reveal {
     opacity: 1;
     transform: none;
+    clip-path: none;
+    transition: none;
   }
+  .stat-number::after {
+    transition: none;
+  }
+
+  /* Marquees + decorative loops off. */
   .shot-track-anim,
-  .footer-track-anim {
+  .footer-track-anim,
+  .hero-bg-grid,
+  .hero-blob,
+  .cta-glow,
+  .scroll-cue-dot,
+  .hero-kicker::before {
     animation: none;
+  }
+
+  /* Entrance animations resolve instantly. */
+  .anim-rise {
+    opacity: 1;
+    animation: none;
+  }
+  .hero-word {
+    transform: none;
+    animation: none;
+  }
+  .hero-word-mask {
+    overflow: visible;
+  }
+
+  /* Rotator: show the first word only. */
+  .rotator-item {
+    animation: none;
+  }
+  .rotator-item:first-child {
+    opacity: 1;
+  }
+
+  /* Hover-only motion (transforms) is disabled too. */
+  .btn-primary::after,
+  .industry-card-img::after {
+    display: none;
+  }
+  .service-row::before {
+    transform: scaleY(0);
+    transition: none;
+  }
+  .service-label,
+  .service-arrow,
+  .faq-answer-inner,
+  .quote-card,
+  .industry-card,
+  .industry-card-img {
+    transition: none;
+  }
+
+  /* Header nav: keep the colour feedback, drop the moving underline/bar. */
+  .header-link::after,
+  .header-link-mobile::before {
+    transition: none;
+  }
+  .header-link-mobile {
+    transition: color 0.25s ease;
+  }
+}
+
+/* ================================================================
+   PRICING PAGE — calculator, switch, summary, plans.
+   Hero, section headings, container, final CTA aur fonts sab
+   home page ke shared classes (kicker, hero-title, section-title,
+   Container, cta-card) se aate hain — sirf page-specific parts
+   yahan hain. Colors = brand tokens, fonts = global stacks.
+   ================================================================ */
+
+/* ---- tabs switch (pill toggle) ---- */
+.pricing-switch {
+  display: inline-flex;
+}
+
+.pricing-switch-btn {
+  border: 0;
+  background: var(--color-panel);
+  color: var(--color-slate);
+  padding: 14px 30px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  transition: color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-switch-btn:first-child {
+  border-radius: 999px 0 0 999px;
+  border: 1px solid var(--color-line);
+  border-right: 0;
+}
+
+.pricing-switch-btn:last-child {
+  border-radius: 0 999px 999px 0;
+  border: 1px solid var(--color-line);
+  border-left: 0;
+}
+
+.pricing-switch-btn:hover {
+  color: var(--color-ink);
+}
+
+.pricing-switch-btn.is-active {
+  background: linear-gradient(95deg, var(--color-crimson), var(--color-crimson-light));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 10px 25px rgba(230, 51, 41, 0.25);
+}
+
+/* ---- calculator layout ---- */
+.pricing-calculator {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.7fr);
+  gap: 25px;
+  align-items: start;
+}
+
+.pricing-questions {
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  padding: 35px;
+}
+
+.pricing-question {
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.pricing-question:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pricing-question-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-panel);
+  color: var(--color-crimson);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 13px;
+}
+
+.pricing-question h3 {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.pricing-question-desc {
+  color: var(--color-slate);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 17px;
+}
+
+/* ---- yes / no ---- */
+.pricing-yesno {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pricing-choice {
+  border: 1px solid var(--color-line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-ink);
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.pricing-choice:hover {
+  border-color: var(--color-crimson);
+}
+
+.pricing-choice.is-selected {
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
+}
+
+.pricing-choice-price {
+  display: block;
+  color: var(--color-crimson);
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-choice.is-selected .pricing-choice-price {
+  color: #ff8b84;
+}
+
+/* ---- option cards ---- */
+.pricing-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.pricing-option {
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.pricing-option:hover {
+  border-color: var(--color-crimson);
+}
+
+.pricing-option.is-selected {
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
+}
+
+.pricing-option strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.pricing-option span {
+  display: block;
+  color: var(--color-slate);
+  font-size: 12px;
+}
+
+.pricing-option.is-selected span {
+  color: #bfc5ca;
+}
+
+.pricing-option-price {
+  display: block;
+  color: var(--color-crimson);
+  font-weight: 800;
+  font-style: normal;
+  font-size: 13px;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-option.is-selected .pricing-option-price {
+  color: #ff8b84;
+}
+
+/* ---- sticky summary ---- */
+.pricing-summary {
+  position: sticky;
+  top: 100px;
+  background: var(--color-ink);
+  color: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 30px 70px rgba(20, 24, 29, 0.18);
+  height: fit-content;
+}
+
+.pricing-summary-label {
+  color: var(--color-slate-light);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.pricing-summary h3 {
+  font-size: 27px;
+  margin-bottom: 25px;
+}
+
+.pricing-summary-items {
+  border-top: 1px solid #303943;
+  border-bottom: 1px solid #303943;
+  padding: 16px 0;
+  min-height: 100px;
+}
+
+.pricing-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 13px;
+  padding: 7px 0;
+  color: #d6dbdf;
+}
+
+.pricing-summary-row strong {
+  color: #fff;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-summary-empty {
+  color: #858e97;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pricing-summary-total {
+  padding: 25px 0 20px;
+  border-top: 1px solid #303943;
+}
+
+.pricing-total-label {
+  color: var(--color-slate-light);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.pricing-total-price {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.pricing-total-note {
+  color: #858e97;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.pricing-summary-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* ---- conditional blocks ---- */
+.pricing-conditional {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px dashed var(--color-line);
+}
+
+/* ---- SEO plans ---- */
+.pricing-plan {
+  position: relative;
+  height: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 30px;
+  background: #fff;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.pricing-plan:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 60px rgba(20, 24, 29, 0.1);
+}
+
+.pricing-plan.is-popular {
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
+}
+
+.pricing-plan-badge {
+  position: absolute;
+  top: -13px;
+  right: 20px;
+  background: linear-gradient(95deg, var(--color-crimson), var(--color-crimson-light));
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.pricing-plan h3 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.pricing-plan-desc {
+  color: var(--color-slate);
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 42px;
+}
+
+.pricing-plan.is-popular .pricing-plan-desc {
+  color: #a8afb6;
+}
+
+.pricing-plan-price {
+  margin: 25px 0;
+}
+
+.pricing-plan-price strong {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-plan-price span {
+  color: var(--color-slate);
+  font-size: 12px;
+}
+
+.pricing-plan.is-popular .pricing-plan-price span {
+  color: #a8afb6;
+}
+
+.pricing-plan-list {
+  list-style: none;
+  border-top: 1px solid var(--color-line);
+  padding-top: 20px;
+}
+
+.pricing-plan.is-popular .pricing-plan-list {
+  border-color: #303943;
+}
+
+.pricing-plan-list li {
+  position: relative;
+  padding-left: 22px;
+  margin-bottom: 13px;
+  font-size: 13px;
+  color: var(--color-slate);
+}
+
+.pricing-plan.is-popular .pricing-plan-list li {
+  color: #d4d9dd;
+}
+
+.pricing-plan-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-crimson);
+  font-weight: 900;
+}
+
+.pricing-plan-btn {
+  display: block;
+  text-align: center;
+  margin-top: 25px;
+  padding: 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.pricing-plan.is-popular .pricing-plan-btn {
+  background: linear-gradient(95deg, var(--color-crimson), var(--color-crimson-light));
+  border-color: transparent;
+  color: #fff;
+}
+
+.pricing-plan-btn:hover {
+  border-color: var(--color-crimson);
+}
+
+.pricing-plan.is-popular .pricing-plan-btn:hover {
+  border-color: transparent;
+}
+
+/* ---- responsive ---- */
+@media (max-width: 900px) {
+  .pricing-calculator {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-summary {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .pricing-switch-btn {
+    padding: 13px 10px;
+    font-size: 12px;
+    flex: 1;
+  }
+
+  .pricing-questions {
+    padding: 22px 18px;
+  }
+
+  .pricing-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-summary {
+    padding: 24px 20px;
+  }
+
+  .pricing-total-price {
+    font-size: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-plan,
+  .pricing-choice,
+  .pricing-option,
+  .pricing-plan-btn,
+  .pricing-switch-btn {
+    transition: none;
+  }
+
+    .pricing-plan:hover {
+    transform: none;
   }
 }

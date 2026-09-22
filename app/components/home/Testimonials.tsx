@@ -3,7 +3,7 @@ import Kicker from "@/app/components/ui/Kicker";
 import Reveal from "@/app/components/ui/Reveal";
 import type { Testimonial } from "@/app/lib/content/types";
 
-/** Testimonials — three-column quote cards. */
+/** Testimonials — three-column quote cards with a staggered entrance. */
 export default function Testimonials({
   heading,
   items,
@@ -14,26 +14,32 @@ export default function Testimonials({
   return (
     <section id="work" className="py-[100px]">
       <Container>
-        <Kicker>Testimonials</Kicker>
-        <h2 className="section-title mb-10">{heading}</h2>
+        <Reveal variant="up">
+          <Kicker>Testimonials</Kicker>
+          <h2 className="section-title mb-10">{heading}</h2>
+        </Reveal>
 
         {/* 3-up from 860px, matching the reference design's breakpoint. */}
-        <Reveal className="grid grid-cols-1 gap-5 min-[860px]:grid-cols-3">
-          {items.map((testimonial) => (
-            <figure
+        <div className="grid grid-cols-1 gap-5 min-[860px]:grid-cols-3">
+          {items.map((testimonial, index) => (
+            <Reveal
               key={testimonial.author}
-              className="rounded-[14px] border border-line bg-panel p-[26px]"
+              variant="up"
+              delay={index * 120}
+              className="h-full"
             >
-              <p className="mb-[18px] text-[14.5px] leading-[1.55] text-ink">
-                {testimonial.quote}
-              </p>
-              <figcaption className="flex items-center gap-[10px]">
-                <span className="avatar">{testimonial.initial}</span>
-                <b className="text-[14px]">{testimonial.author}</b>
-              </figcaption>
-            </figure>
+              <figure className="quote-card h-full rounded-[14px] border border-line bg-panel p-[26px]">
+                <p className="mb-[18px] text-[14.5px] leading-[1.55] text-ink">
+                  {testimonial.quote}
+                </p>
+                <figcaption className="flex items-center gap-[10px]">
+                  <span className="avatar">{testimonial.initial}</span>
+                  <b className="text-[14px]">{testimonial.author}</b>
+                </figcaption>
+              </figure>
+            </Reveal>
           ))}
-        </Reveal>
+        </div>
       </Container>
     </section>
   );

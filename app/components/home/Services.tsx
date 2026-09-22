@@ -14,34 +14,44 @@ export default function Services({
   return (
     <section id="services" className="py-[100px]">
       <Container>
-        <Kicker>Services</Kicker>
-        <h2 className="section-title">{heading}</h2>
+        <Reveal variant="up">
+          <Kicker>Services</Kicker>
+          <h2 className="section-title">{heading}</h2>
+        </Reveal>
 
         {/* Split at 760px, matching the reference design's breakpoint. */}
-        <Reveal className="mt-5 grid grid-cols-1 gap-10 min-[760px]:grid-cols-2">
-          {groups.map((group) => (
+        <div className="mt-5 grid grid-cols-1 gap-10 min-[760px]:grid-cols-2">
+          {groups.map((group, groupIndex) => (
             <div key={group.title}>
-              <h3 className="mb-[18px] text-[15px] uppercase tracking-[0.06em] text-slate">
-                {group.title}
-              </h3>
+              <Reveal variant="up" delay={groupIndex * 90}>
+                <h3 className="mb-[18px] text-[15px] uppercase tracking-[0.06em] text-slate">
+                  {group.title}
+                </h3>
+              </Reveal>
+
               <div className="border-y border-line">
                 {group.items.map((item, index) => (
-                  <div
+                  <Reveal
                     key={item}
-                    className={`flex items-center justify-between border-line py-[18px] text-[17px] font-medium ${
+                    variant="left"
+                    delay={index * 90}
+                    className={`service-row flex items-center justify-between border-line py-[18px] text-[17px] font-medium ${
                       index === 0 ? "" : "border-t"
                     }`}
                   >
-                    <span>{item}</span>
-                    <span className="font-bold text-crimson" aria-hidden="true">
+                    <span className="service-label">{item}</span>
+                    <span
+                      className="service-arrow font-bold text-crimson"
+                      aria-hidden="true"
+                    >
                       →
                     </span>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
             </div>
           ))}
-        </Reveal>
+        </div>
       </Container>
     </section>
   );

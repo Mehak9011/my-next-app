@@ -1,23 +1,36 @@
 import Container from "@/app/components/ui/Container";
+import CountUp from "@/app/components/ui/CountUp";
 import Reveal from "@/app/components/ui/Reveal";
 import type { Stat } from "@/app/lib/content/types";
 
-/** Stats bar — full-width panel with four key numbers. */
+/**
+ * Stats bar — full-width panel with the four key numbers.
+ * Numbers count up on first view, and each value carries a crimson accent
+ * sized to the number itself (see "HOME — STATS BAR" in globals.css).
+ */
 export default function Stats({ stats }: { stats: Stat[] }) {
   return (
-    <Reveal className="border-y border-line bg-panel">
-      <Container className="flex flex-wrap justify-around gap-[30px] py-10 text-center">
-        {stats.map((stat) => (
-          <div key={stat.label} className="min-w-[120px]">
-            <h3 className="text-[34px] font-semibold leading-tight text-ink">
-              {stat.value}
-            </h3>
-            <p className="mt-1 text-[13.5px] font-medium text-slate">
-              {stat.label}
-            </p>
-          </div>
-        ))}
+    <div className="border-y border-line bg-panel">
+      <Container className="py-10">
+        <div className="stats-grid">
+          {stats.map((stat, index) => (
+            <Reveal
+              key={stat.label}
+              variant="up"
+              delay={index * 110}
+              className="stat-item"
+            >
+              <h3 className="stat-value">
+                <span className="stat-number">
+                  <CountUp value={stat.value} />
+                </span>
+              </h3>
+              <p className="stat-label">{stat.label}</p>
+            </Reveal>
+          ))}
+        </div>
       </Container>
-    </Reveal>
+    </div>
   );
 }
+

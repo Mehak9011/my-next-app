@@ -137,3 +137,100 @@ export interface AboutContent {
     buttonLabel: string;
   };
 }
+
+/* ------------------------------------------------------------------
+   Pricing page — populated by WordPress ACF with bundled Next.js
+   defaults as fallback (app/lib/content/pricing.ts).
+   Free-ACF compatible: fixed slots only (groups + text/number/textarea),
+   no repeaters. ACF field group lives in wordpress/acf-field-group.json
+   and maps 1:1 to these interfaces (see wordpress/pricing-acf-setup.md).
+   Tab "design"      ← ACF group "Designing"
+   Tab "development" ← ACF group "Development"
+   ------------------------------------------------------------------ */
+export interface PricingWebsiteType {
+  key: string;
+  title: string;
+  description: string;
+  price: number;
+  priceLabel: string;
+}
+
+export interface PricingProductOption {
+  key: string;
+  title: string;
+  description: string;
+  price: number;
+  priceLabel: string;
+}
+
+export interface PricingQuestion {
+  key: "logo" | "branding" | "website" | "redesign" | "custom";
+  number: string;
+  title: string;
+  description: string;
+  /** Price added on "Yes" (0 for the website flow and contact-only items). */
+  yesPrice: number;
+  /** Sub-label under "Yes" (e.g. "+$50", "Choose Website Type", "Contact Us"). */
+  yesSub: string;
+  mode: "simple" | "website" | "contact";
+  websitePrompt: string;
+  websiteTypes: [PricingWebsiteType, PricingWebsiteType];
+  staticNote: string;
+  staticTitle: string;
+  staticDescription: string;
+  staticLabel: string;
+  productPrompt: string;
+  productOptions: [PricingProductOption, PricingProductOption];
+}
+
+export interface PricingDesignTab {
+  id: "design";
+  tabLabel: string;
+  kicker: string;
+  heading: string;
+  sub: string;
+  questions: PricingQuestion[];
+  summaryLabel: string;
+  summaryTitle: string;
+  emptyText: string;
+  totalLabel: string;
+  totalNote: string;
+  ctaLabel: string;
+}
+
+export interface PricingPlan {
+  name: string;
+  description: string;
+  price: number;
+  per: string;
+  /** One feature per line in ACF textarea; array in code. */
+  features: string[];
+  ctaLabel: string;
+  popular?: boolean;
+}
+
+export interface PricingDevTab {
+  id: "development";
+  tabLabel: string;
+  popularLabel: string;
+  kicker: string;
+  heading: string;
+  sub: string;
+  plans: [PricingPlan, PricingPlan, PricingPlan];
+}
+
+export interface PricingContent {
+  hero: {
+    kicker: string;
+    title: string;
+    titleAccent: string;
+    subtitle: string;
+  };
+  design: PricingDesignTab;
+  development: PricingDevTab;
+  cta: {
+    title: string;
+    subtitle: string;
+    buttonLabel: string;
+  };
+}

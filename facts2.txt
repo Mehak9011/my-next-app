@@ -1,0 +1,137 @@
+==== pricing rules: depth + line ====
+d0 L562  .faq-item:focus-visible .faq-question {
+d0 L988  .cta-card {
+d0 L1232  .pricing-switch {
+d0 L1236  .pricing-switch-btn {
+d0 L1249  .pricing-switch-btn:first-child {
+d0 L1255  .pricing-switch-btn:last-child {
+d0 L1261  .pricing-switch-btn:hover {
+d0 L1265  .pricing-switch-btn.is-active {
+d0 L1273  .pricing-calculator {
+d0 L1280  .pricing-questions {
+d0 L1287  .pricing-question {
+d0 L1293  .pricing-question:last-child {
+d0 L1299  .pricing-question-number {
+d0 L1314  .pricing-question h3 {
+d0 L1319  .pricing-question-desc {
+d0 L1327  .pricing-yesno {
+d0 L1333  .pricing-choice {
+d0 L1346  .pricing-choice:hover {
+d0 L1350  .pricing-choice.is-selected {
+d0 L1356  .pricing-choice-price {
+d0 L1365  .pricing-choice.is-selected .pricing-choice-price {
+d0 L1370  .pricing-options-grid {
+d0 L1376  .pricing-option {
+d1 L1387  .pricing-summary {
+d1 L1397  .pricing-summary-label {
+d1 L1406  .pricing-summary h3 {
+d1 L1411  .pricing-summary-items {
+d1 L1418  .pricing-summary-row {
+d1 L1427  .pricing-summary-row strong {
+d1 L1433  .pricing-summary-empty {
+d1 L1439  .pricing-summary-total {
+d1 L1443  .pricing-total-label {
+d1 L1449  .pricing-total-price {
+d1 L1456  .pricing-total-note {
+d1 L1463  .pricing-summary-btn {
+d1 L1469  .pricing-plan {
+d1 L1479  .pricing-plan:hover {
+d1 L1484  .pricing-plan.is-popular {
+d1 L1490  .pricing-plan-badge {
+d1 L1504  .pricing-plan h3 {
+d1 L1509  .pricing-plan-desc {
+d1 L1516  .pricing-plan.is-popular .pricing-plan-desc {
+d1 L1520  .pricing-plan-price {
+d1 L1524  .pricing-plan-price strong {
+d1 L1531  .pricing-plan-price span {
+d1 L1536  .pricing-plan.is-popular .pricing-plan-price span {
+d1 L1540  .pricing-plan-list {
+d1 L1546  .pricing-plan.is-popular .pricing-plan-list {
+d1 L1550  .pricing-plan-list li {
+d1 L1558  .pricing-plan.is-popular .pricing-plan-list li {
+d1 L1562  .pricing-plan-list li::before {
+d1 L1570  .pricing-plan-btn {
+d1 L1582  .pricing-plan.is-popular .pricing-plan-btn {
+d1 L1588  .pricing-plan-btn:hover {
+d1 L1592  .pricing-plan.is-popular .pricing-plan-btn:hover {
+d2 L1598  .pricing-calculator {
+d2 L1602  .pricing-summary {
+d2 L1609  .pricing-switch-btn {
+d2 L1615  .pricing-questions {
+d2 L1619  .pricing-options-grid {
+d2 L1623  .pricing-summary {
+d2 L1627  .pricing-total-price {
+d2 L1637  .pricing-switch-btn {
+d2 L1641  .pricing-plan:hover {
+d0 L1648  .pricing-option:hover {
+d0 L1652  .pricing-option.is-selected {
+d0 L1658  .pricing-option strong {
+d0 L1664  .pricing-option span {
+d0 L1670  .pricing-option.is-selected span {
+d0 L1674  .pricing-option-price {
+d0 L1684  .pricing-option.is-selected .pricing-option-price {
+d0 L1689  .pricing-conditional {
+
+==== every rule opened ABOVE .pricing-summary that never closed ====
+.pricing-summary first line = 1387
+---- 12 lines before ----
+
+.pricing-option {
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+
+/* ---- sticky summary ---- */
+.pricing-summary {
+  position: sticky;
+  top: 100px;
+  background: var(--color-ink);
+  color: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 30px 70px rgba(20, 24, 29, 0.18);
+}
+
+.pricing-summary-label {
+  color: var(--color-slate-light);
+  font-size: 12px;
+  text-transform: uppercase;
+
+==== dev css chunks ====
+app_globals_css_1igg3k2._.single.css len=61936 pricing-summary=YES @51883 :: ".pricing-summary {\n  background: var(--color-ink);\n  color: #fff;\n  border-radius: 20px;\n "
+[next]_internal_font_google_archivo_af2e400_module_css_1igg3k2._.single.css len=5124 pricing-summary=NO
+[next]_internal_font_google_manrope_9f003831_module_css_1igg3k2._.single.css len=9845 pricing-summary=NO
+[root-of-the-server]__219rpg-._.css len=76695 pricing-summary=YES @66639 :: ".pricing-summary {\n  background: var(--color-ink);\n  color: #fff;\n  border-radius: 20px;\n "
+
+==== JSX: summary markup ====
+anchor line = 0
+﻿"use client";
+
+import { useMemo, useState } from "react";
+import type { PricingDesignTab, PricingQuestion } from "@/app/lib/content/types";
+
+interface DesignCalculatorProps {
+  design: PricingDesignTab;
+  contactHref: string;
+}
+
+interface Selection {
+  service: string;
+  price: number;
+}
+
+/** "Do you need a Logo Design?" â†’ "Logo Design" for summary rows. */
+function cleanTitle(title: string) {
+  return title
+    .replace(/^Do you need (a|an)?\s*/i, "")
+    .replace(/\?$/, "")
+    .trim();
+}
+
+/** Design-tab calculator â€” questions, conditional website flow, sticky summary. */
+export default function DesignCalculator({ design, contactHref }: DesignCalculatorProps) {

@@ -90,6 +90,7 @@ export interface AboutValue {
   description: string;
 }
 
+/** One functional seat of the studio — a discipline, never an invented personal name. */
 export interface AboutTeamMember {
   name: string;
   role: string;
@@ -101,6 +102,8 @@ export interface AboutContent {
   hero: {
     kicker: string;
     title: string;
+    /** Crimson second half of the About banner headline. */
+    titleAccent: string;
     subtitle: string;
     ctaLabel: string;
     secondaryLabel: string;
@@ -146,6 +149,7 @@ export interface AboutContent {
    and maps 1:1 to these interfaces (see wordpress/pricing-acf-setup.md).
    Tab "design"      ← ACF group "Designing"
    Tab "development" ← ACF group "Development"
+   Tab "webdev"      ← pricing CPT post slug "development" (Yes/No calculator)
    ------------------------------------------------------------------ */
 export interface PricingWebsiteType {
   key: string;
@@ -164,7 +168,9 @@ export interface PricingProductOption {
 }
 
 export interface PricingQuestion {
-  key: "logo" | "branding" | "website" | "redesign" | "custom";
+  /** Stable id — fixed keys for Designing, normalised ACF field name
+   *  for the Development tab's dynamic questions. */
+  key: string;
   number: string;
   title: string;
   description: string;
@@ -219,6 +225,22 @@ export interface PricingDevTab {
   plans: [PricingPlan, PricingPlan, PricingPlan];
 }
 
+/**
+ * Middle "Development" tab — a Yes/No calculator whose questions are
+ * built DYNAMICALLY at runtime: every priced ACF field on the
+ * `pricing` CPT post with slug `development` becomes one question
+ * ("new_website_development" → "Do you need New Website
+ * Development?"), see section 0.3 of wordpress/pricing-acf-setup.md.
+ * The tab is always visible; while `cmsReady` is false (no post / no
+ * priced field) PricingTabs renders a heading + quote-CTA empty
+ * state — placeholder questions never render.
+ */
+export interface PricingWebDevTab extends Omit<PricingDesignTab, "id"> {
+  id: "webdev";
+  /** True only when WordPress ACF carries at least one price. */
+  cmsReady: boolean;
+}
+
 export interface PricingContent {
   hero: {
     kicker: string;
@@ -227,8 +249,76 @@ export interface PricingContent {
     subtitle: string;
   };
   design: PricingDesignTab;
+  webdev: PricingWebDevTab;
   development: PricingDevTab;
   cta: {
+    title: string;
+    subtitle: string;
+    buttonLabel: string;
+  };
+}
+
+/* ------------------------------------------------------------------
+   Services page — bundled Next.js content. WordPress only registers the
+   /services URL; copy and presentation stay in the frontend.
+   ------------------------------------------------------------------ */
+export interface ServiceDetail {
+  id: string;
+  number: string;
+  category: string;
+  title: string;
+  summary: string;
+  description: string;
+  features: string[];
+  outcome: string;
+}
+
+export interface ServicesResult {
+  title: string;
+  description: string;
+  tag: string;
+}
+
+export interface ServicesContent {
+  hero: {
+    kicker: string;
+    title: string;
+    titleAccent: string;
+    subtitle: string;
+    ctaLabel: string;
+    secondaryLabel: string;
+    trustBadge: string;
+  };
+  overview: {
+    kicker: string;
+    heading: string;
+    intro: string;
+    groups: Array<{
+      title: string;
+      items: Array<{ label: string; href: string }>;
+    }>;
+  };
+  detailsIntro: {
+    kicker: string;
+    heading: string;
+    intro: string;
+  };
+
+  details: ServiceDetail[];
+  results: {
+    kicker: string;
+    heading: string;
+    description: string;
+    items: ServicesResult[];
+  };
+  support: {
+    kicker: string;
+    heading: string;
+    copy: string;
+    points: string[];
+  };
+  cta: {
+    kicker: string;
     title: string;
     subtitle: string;
     buttonLabel: string;

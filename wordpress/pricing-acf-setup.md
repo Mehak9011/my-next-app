@@ -25,6 +25,7 @@ The `pricing` post type maps to the calculator like this:
 |---|---|---|
 | `Designing` | Design tab (Yes/No questions) | see 0.1 |
 | `Development` | Development tab (SEO plans) | see 0.2 |
+| `development` (title "Development") | **Middle Development tab** | see 0.3 |
 
 The **post title becomes the tab label** (e.g. post "Designing" → tab
 "Designing"). Field values are matched by *normalised name*
@@ -61,7 +62,42 @@ Three plan slots, prefix per slot: `starter` / `growth` / `premium`
 Fields missing for a slot keep that plan's default. Optional tab copy:
 `kicker`, `heading`, `subtext`.
 
-### 0.3 One WordPress setting needed (REST exposure)
+### 0.3 Development post — middle tab (development questions)
+
+Create a **third** `Pricing` post:
+
+| Property | Value |
+|---|---|
+| Title | becomes the **tab label** — use exactly `Development` (accepted also: `Web Development`, `Development Plans`) |
+| Slug | must be `development` (alternatives: `development-plans`, `web-development`, `webdev`) — matched **exactly**; any other slug keeps the tab on its empty state |
+| Status | Publish |
+
+The middle tab is **fully dynamic**: every priced ACF field on the
+Development post automatically becomes one Yes/No question — no code
+changes needed. Add a **Number** field in the **Development** ACF
+group (location: Pricing → Development post), set that group's
+**Show in REST** = Yes, fill a value and Update:
+
+| You add (ACF field) | You get (calculator question) |
+|---|---|
+| `new_website_development` = 500 | Do you need New Website Development? → +$500 |
+| `ecommerce_store` = 1200 | Do you need Ecommerce Store? → +$1200 |
+
+Rules:
+
+- Field **name** → question title (underscores/hyphens become
+  spaces, Title Case); field **value** → Yes price (`+$N`).
+- **Empty or non-numeric fields are hidden** — placeholder questions
+  never render.
+- Never treated as questions: the Designing fields (`design`,
+  `branding`, `website_re-design`) and the copy overrides (`kicker`,
+  `heading`, `subtext`, CTA/summary labels).
+- With no Development post (or no priced field) the tab shows the
+  empty state — heading + "Request a Custom Quote" CTA.
+- Section copy (kicker/heading/sub) keeps the code defaults unless
+  the post carries `kicker` / `heading` / `subtext`.
+
+### 0.4 One WordPress setting needed (REST exposure)
 
 Right now REST returns `acf: []` for these posts, so only the tab
 labels come through. To expose the ACF values over REST:
@@ -189,6 +225,8 @@ Plan 2 is always styled as the popular/highlighted card.
 3. Open the Pricing page and fill values; publish/update.
 4. Check WPGraphQL shows `pricingFields` on `pageBy(uri:"/pricing/")`.
 5. No page-builder content; CMS supplies values only.
+6. Middle Development tab: create the third post per section 0.3
+   (slug `development`) and fill at least one of its four price fields.
 
 ## 5. Next.js behaviour
 

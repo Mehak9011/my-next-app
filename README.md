@@ -8,6 +8,10 @@ WPGraphQL. **No ACF. No Elementor. No page-builder.**
 > **Brand** — CodeXmattriX · "Envision. Design. Code."
 > **Stack** — Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · WPGraphQL
 > **CMS** — `https://cms.codexmattrix.com/` · GraphQL `https://cms.codexmattrix.com/graphql`
+>
+> 📘 **Full project documentation** — [`PROJECT.md`](./PROJECT.md): architecture,
+> data flow, pricing/ACF field map, WordPress proxy, commands, CI/CD, conventions
+> and pending work, all in one file.
 
 ---
 

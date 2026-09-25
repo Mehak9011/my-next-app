@@ -17,22 +17,89 @@
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # VARIANT 1 (RECOMMENDED — works on Hostinger without mod_proxy)
-# PHP reverse proxy -> requires wordpress/proxy.php uploaded too.
+# PHP reverse proxy -> requires wordpress/proxy.php (v3) uploaded too.
+#
+# IMPORTANT — homepage "/": TWO things can silently swallow "/" and keep
+# showing the WordPress theme ("Cms / Home" + logo) while /about/ already
+# shows Next.js:
+#   1. A "RewriteCond %{REQUEST_FILENAME} -d / RewriteRule ^ - [L]"
+#      passthrough — the site root IS a real directory, so "/" short-
+#      circuits there and index.php (WP theme) is served.
+#   2. Missing explicit "^$" homepage rule (some hosts short-circuit "/"
+#      to index.php before any generic rule runs).
+# Both fixes are included below: the "^$" rule comes FIRST, and the "-d"
+# directory rule excludes the root with !^/$.
+# The /wp-json + /graphql rules below also keep page saves and the REST
+# API working on WordPress (JSON 404 fix) instead of proxying them to
+# Vercel.
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
 
-# --- Never proxy WordPress internals or the proxy script itself ---
-RewriteCond %{REQUEST_URI} !^/(proxy\.php|index\.php|wp-admin/?|wp-login\.php|wp-json|graphql|wp-content/|wp-includes/|wp-cron\.php|xmlrpc\.php|\.well-known/|readme\.html|license\.txt)
+# --- Authorization header passthrough (REST/GraphQL auth) ---
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# --- 0. Homepage "/" -> Next.js Home (app/page.tsx) via the proxy ---
+# Must come FIRST so WordPress/index.php never claims the homepage.
+RewriteRule ^$ /proxy.php?_cmx=1 [L,QSA]
+
+# --- WordPress admin / login stay on WordPress ---
+RewriteRule ^wp-admin(/|$) - [L]
+RewriteRule ^wp-login\.php$ - [L]
+
+# --- WordPress REST API (page saves + /wp-json must stay on WP) ---
+RewriteRule ^wp-json/?$ index.php?rest_route=/ [QSA,L]
+RewriteRule ^wp-json/(.*)$ index.php?rest_route=/$1 [QSA,L]
+
+# --- WordPress GraphQL (WPGraphQL) ---
+RewriteRule ^graphql/?$ index.php [QSA,L]
+
+# --- Other WordPress paths that stay on WP ---
+RewriteRule ^wp-content(/|$) - [L]
+RewriteRule ^wp-includes(/|$) - [L]
+RewriteRule ^wp-cron\.php$ - [L]
+RewriteRule ^xmlrpc\.php$ - [L]
+RewriteRule ^wp-signup\.php$ - [L]
+RewriteRule ^wp-activate\.php$ - [L]
+RewriteRule ^wp-comments-post\.php$ - [L]
+RewriteRule ^wp-trackback\.php$ - [L]
+RewriteRule ^\.well-known(/|$) - [L]
+RewriteRule ^proxy\.php$ - [L]
+RewriteRule ^index\.php$ - [L]
+
+# --- Real files (robots.txt, favicon, downloads...) are served as-is ---
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# --- Real directories are served as-is, EXCEPT the site root "/" ---
+# (Without this guard the "-d" rule swallows "/" and the WP theme wins.
+#  !^/(\?|$) matches "/" both with and without a query string.)
+RewriteCond %{REQUEST_URI} !^/(\?|$)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# --- Everything else -> proxy.php -> Next.js on Vercel ---
+# NOTE: /_next/static assets are NOT in the WP docroot, so they fall
+# through here and are proxied from Vercel — that is intended.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ /proxy.php?_cmx=1 [L,QSA]
+</IfModule>
 
-# --- Standard WordPress front controller (admin/API handling) ---
+# BEGIN WordPress
+# The directives (lines) between "BEGIN WordPress" and "END WordPress" are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
 RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.php [L]
 </IfModule>
+# END WordPress
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # VARIANT 2 (only if your host enables Apache mod_proxy)

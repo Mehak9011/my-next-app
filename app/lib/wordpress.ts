@@ -1,5 +1,8 @@
 ﻿import { defaultHomeContent } from "@/app/lib/content/defaults";
-import { defaultPricingContent as pricingFallback } from "@/app/lib/content/pricing";
+import {
+  defaultPricingContent as pricingFallback,
+  emptyQuestionSlots,
+} from "@/app/lib/content/pricing";
 import type {
   HomeContent,
   PricingContent,
@@ -131,6 +134,7 @@ export async function getHomeContent(): Promise<HomeContent> {
 
    Tab "design"      ← ACF group "Designing"
    Tab "development" ← ACF group "Development"
+   Tab "webdev"      ← pricing CPT post slug "development" (Yes/No calculator)
 
    Free-ACF compatible: only text / number / textarea / group fields
    (fixed slots, no repeaters). WordPress exposes the same slots twice:
@@ -241,6 +245,11 @@ export function mergePricingContent(
       heading: text(get("devHeading", "dev_heading"), fallback.development.heading),
       sub: text(get("devSubtitle", "dev_subtitle"), fallback.development.sub),
       plans: mergePricingPlans(get("devPlans", "dev_plans"), fallback),
+    },
+    webdev: {
+      // Page-level ACF has no slots for this tab — the `pricing` CPT
+      // post layer (applyPricingPosts) fills it from WordPress.
+      ...fallback.webdev,
     },
     cta: {
       title: text(get("ctaTitle", "cta_title"), fallback.cta.title),
@@ -538,13 +547,17 @@ export async function getPricingContent(): Promise<PricingContent> {
    tab (see the Pricings screen in wp-admin):
 
      • post "Designing"   → design tab      (question prices)
-     • post "Development" → development tab (SEO plan cards)
+     • post "Development" → middle "Development" tab (dev-specific questions)
 
    ACF values are read from either backend and matched by *normalised*
    field name (lowercase, non-alphanumerics stripped), so ACF labels
    like "logo Design" (name `logo_design`) or "Website Re-design"
    (name `website_re-design`) all resolve without exact spelling.
-   Missing fields simply keep the bundled defaults.
+   Missing fields simply keep the bundled defaults. The middle
+   "Development" tab comes from the post with slug "development"
+   (aliases: development-plans, web-development, webdev; post title =
+   tab label) and falls back to a heading + quote-CTA empty state
+   while that post carries no price data.
    ------------------------------------------------------------------ */
 
 /** One `pricing` CPT post with its ACF values (keys normalised). */
@@ -553,6 +566,9 @@ export interface PricingPostData {
   slug: string;
   title: string;
   fields: Record<string, unknown>;
+  /** RAW field names (pre-normalisation) → values; drives the dynamic
+   *  Development question labels ("new_website_development" → …). */
+  rawFields: Record<string, unknown>;
 }
 
 /** Lowercase + strip everything non-alphanumeric ("Website Re-design" → websiteredesign). */
@@ -608,6 +624,7 @@ async function fetchPricingPostsRest(): Promise<PricingPostData[]> {
       slug: typeof post.slug === "string" ? post.slug : "",
       title: postTitle(post.title),
       fields: fieldsFromAcf(post.acf),
+      rawFields: isRecord(post.acf) ? post.acf : {},
     }));
 }
 
@@ -675,9 +692,11 @@ async function fetchPricingPostsGraphql(): Promise<PricingPostData[]> {
     .filter((node) => node && (node.slug || node.databaseId))
     .map((node) => {
       const fields: Record<string, unknown> = {};
+      const rawFields: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(node)) {
         if (!PRICING_FIELD_BLOCKLIST.has(normKey(key))) {
           fields[normKey(key)] = value;
+          rawFields[key] = value;
         }
       }
       return {
@@ -685,10 +704,53 @@ async function fetchPricingPostsGraphql(): Promise<PricingPostData[]> {
         slug: typeof node.slug === "string" ? node.slug : "",
         title: postTitle(node.title),
         fields,
+        rawFields,
       };
     });
 }
 
+
+/**
+ * Merge CMS plan slots (starter/growth/premium prefixes, normalised
+ * match) over base plan cards. A slot with no CMS data keeps its base
+ * card; `matched` reports whether at least one slot carried data.
+ */
+function mergePlanSlots(
+  f: Record<string, unknown>,
+  base: [PricingPlan, PricingPlan, PricingPlan],
+  extraPrefixes: string[][] = []
+): { plans: [PricingPlan, PricingPlan, PricingPlan]; matched: boolean } {
+  const slotPrefixes: string[][] = [
+    ["starter", "seo_starter", "plan_1", "plan1", "starter_plan"],
+    ["growth", "seo_growth", "plan_2", "plan2", "growth_plan"],
+    ["premium", "seo_premium", "plan_3", "plan3", "premium_plan"],
+  ].map((prefixes, index) => [...prefixes, ...(extraPrefixes[index] ?? [])]);
+
+  let matched = false;
+  const plans = base.map((plan, index) => {
+    const prefixes = slotPrefixes[index] ?? [];
+    const get = (...suffixes: string[]) =>
+      pickNorm(f, ...prefixes.flatMap((p) => suffixes.map((s) => `${p}_${s}`)));
+    const name = text(get("title", "name", "heading"), "");
+    const priceRaw = get("price");
+    const features = lines(get("features", "includes"));
+    const hasData = Boolean(name) || priceRaw !== undefined || features.length > 0;
+    if (!hasData) return plan; // nothing in CMS for this slot — keep base
+
+    matched = true;
+    return {
+      ...plan,
+      name: name || plan.name,
+      description: text(get("description", "desc", "text"), plan.description),
+      price: priceRaw !== undefined ? num(priceRaw, plan.price) : plan.price,
+      per: text(get("per", "period"), plan.per),
+      features: features.length > 0 ? features : plan.features,
+      ctaLabel: text(get("cta", "cta_label", "button"), plan.ctaLabel),
+    };
+  }) as [PricingPlan, PricingPlan, PricingPlan];
+
+  return { plans, matched };
+}
 
 /**
  * Overlay CPT post data on top of the current pricing content.
@@ -702,17 +764,28 @@ export function applyPricingPosts(
   const content: PricingContent = {
     ...base,
     design: { ...base.design, questions: [...base.design.questions] },
+    webdev: { ...base.webdev, questions: [...base.webdev.questions] },
     development: { ...base.development },
   };
 
+  // Middle-tab post — EXACT slug match, identified FIRST so the legacy
+  // lookups below can never grab it by accident. "development" is the
+  // slug WordPress generated for the wp-admin post titled "Development".
+  const WEBDEV_SLUGS = new Set(["development", "developmentplans", "webdevelopment", "webdev"]);
+  const webdevPost =
+    posts.find((post) => WEBDEV_SLUGS.has(normKey(post.slug))) ?? null;
+
   const findPost = (match: string, exclude?: string) =>
     posts.find((post) => {
+      if (post === webdevPost) return false;
       const hay = normKey(`${post.slug} ${post.title}`);
       return hay.includes(match) && (!exclude || !hay.includes(exclude));
     });
 
   const designPost = findPost("design", "develop");
-  const devPost = findPost("develop");
+  // SEO tab data: ONLY explicit SEO posts — the wp-admin "Development"
+  // post (slug "development") drives the MIDDLE tab, never this one.
+  const devPost = findPost("seo") ?? findPost("digitalmarketing");
 
   /* ---------------- Designing post → design tab ---------------- */
   if (designPost) {
@@ -823,31 +896,82 @@ export function applyPricingPosts(
     content.development.heading = text(pickNorm(f, "heading"), content.development.heading);
     content.development.sub = text(pickNorm(f, "subtext", "subtitle", "sub"), content.development.sub);
 
-    const slotPrefixes: string[][] = [
-      ["starter", "seo_starter", "plan_1", "plan1", "starter_plan"],
-      ["growth", "seo_growth", "plan_2", "plan2", "growth_plan"],
-      ["premium", "seo_premium", "plan_3", "plan3", "premium_plan"],
-    ];
-    content.development.plans = content.development.plans.map((plan, index) => {
-      const prefixes = slotPrefixes[index] ?? [];
-      const get = (...suffixes: string[]) =>
-        pickNorm(f, ...prefixes.flatMap((p) => suffixes.map((s) => `${p}_${s}`)));
-      const name = text(get("title", "name", "heading"), "");
-      const priceRaw = get("price");
-      const features = lines(get("features", "includes"));
-      const hasData = Boolean(name) || priceRaw !== undefined || features.length > 0;
-      if (!hasData) return plan; // nothing in CMS for this slot — keep base
+    content.development.plans = mergePlanSlots(f, content.development.plans)
+      .plans;
+  }
 
-      return {
-        ...plan,
-        name: name || plan.name,
-        description: text(get("description", "desc", "text"), plan.description),
-        price: priceRaw !== undefined ? num(priceRaw, plan.price) : plan.price,
-        per: text(get("per", "period"), plan.per),
-        features: features.length > 0 ? features : plan.features,
-        ctaLabel: text(get("cta", "cta_label", "button"), plan.ctaLabel),
-      };
-    }) as [PricingPlan, PricingPlan, PricingPlan];
+  /* ---- Development post (slug "development") → middle calculator ---- */
+  if (webdevPost) {
+    const f = webdevPost.fields;
+    content.webdev.tabLabel = text(webdevPost.title, content.webdev.tabLabel);
+    content.webdev.kicker = text(pickNorm(f, "kicker"), content.webdev.kicker);
+    content.webdev.heading = text(pickNorm(f, "heading"), content.webdev.heading);
+    content.webdev.sub = text(
+      pickNorm(f, "subtext", "subtitle", "sub"),
+      content.webdev.sub
+    );
+
+    // DYNAMIC questions: every priced ACF field on this post becomes
+    // one Yes/No question ("new_website_development" 500 → "Do you
+    // need New Website Development?" +$500). The Designing tab's
+    // fields (design / branding / website_re-design) and the copy
+    // overrides are never questions; empty or non-numeric fields are
+    // hidden, so placeholder questions never render.
+    const SKIP_DYNAMIC = new Set([
+      "design",
+      "branding",
+      "websiteredesign",
+      "kicker",
+      "heading",
+      "subtext",
+      "subtitle",
+      "sub",
+      "ctalabel",
+      "ctatext",
+      "totallabel",
+      "totalnote",
+      "popularlabel",
+      "summarylabel",
+      "summarytitle",
+      "emptytext",
+      "tablabel",
+    ]);
+    const toLabel = (rawKey: string) =>
+      rawKey
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const dynamic: PricingQuestion[] = [];
+    for (const [rawKey, rawValue] of Object.entries(webdevPost.rawFields)) {
+      if (SKIP_DYNAMIC.has(normKey(rawKey))) continue;
+      const str =
+        typeof rawValue === "number"
+          ? String(rawValue)
+          : typeof rawValue === "string"
+            ? rawValue.trim()
+            : "";
+      if (str === "" || Number.isNaN(Number(str))) continue;
+      const price = Number(str);
+      const label = toLabel(rawKey);
+      dynamic.push({
+        key: normKey(rawKey),
+        number: String(dynamic.length + 1).padStart(2, "0"),
+        title: `Do you need ${label}?`,
+        description: `Add ${label} to your project.`,
+        yesPrice: price,
+        yesSub: price > 0 ? `+$${price}` : "$0",
+        mode: "simple",
+        ...emptyQuestionSlots,
+      });
+    }
+    if (dynamic.length > 0) {
+      content.webdev.questions = dynamic;
+      content.webdev.cmsReady = true;
+    }
+    // 0 priced fields → keep cmsReady=false → heading + quote-CTA
+    // empty state (PricingTabs), never placeholder questions.
   }
 
   return content;

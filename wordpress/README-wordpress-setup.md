@@ -36,15 +36,37 @@ The design and content live **100% in Next.js**.
    - `Services`, `Pricing`, `FAQ`, `Process`, `Case Studies` → match slugs to
      the pages built in `app/<slug>/page.tsx`
 4. **Reading** — Settings → Reading → *Your homepage displays* → **A static
-   page** → select **Home**.
-5. **Frontend hand-off (CHOSEN method)** — upload `proxy.php` to
-   `public_html/`, then replace the site-root `.htaccess` with the Variant 1
-   block from `htaccess-frontend-proxy.txt`.
+   page** → select **Home**. (This only defines the `/` page record in the
+   GraphQL registry — visitors still get Next.js `app/page.tsx` through the
+   proxy, never the WP theme.)
+5. **Frontend hand-off (CHOSEN method)** — upload `proxy.php` (**v3** — overwrite
+   any older v1 file) to `public_html/`, then replace the site-root `.htaccess`
+   with the Variant 1 block from `htaccess-frontend-proxy.txt` (it contains the
+   explicit `RewriteRule ^$ /proxy.php?_cmx=1` homepage rule). Then **purge all
+   cache** — Hostinger hPanel → Cache → Purge All (and Purge in the LiteSpeed /
+   caching plugin if installed). Without this `/` keeps showing the WP theme
+   ("Cms / Home" + logo) while `/about/` already shows Next.js, and old v1
+   proxy output leaks `HTTP/2 200 ...` text on `/about/` and `/contact/`.
 6. **Test** — open `/`, `/about/`, `/contact/`, `/services/` and
    `/wp-admin` on the cms domain. Public URLs show the Next.js design; the
    admin, editor and `/graphql` keep working.
 
 ---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `/` shows the WP theme ("Cms / Home" + logo) but `/about/` shows Next.js | A `RewriteCond %{REQUEST_FILENAME} -d` passthrough swallows the site root (it IS a real directory), and/or the `^$` homepage rule is missing | Replace the **whole** `.htaccess` with Variant 1 in `htaccess-frontend-proxy.txt` — it has `RewriteRule ^$ /proxy.php?_cmx=1` **first** and the `-d` rule excludes `/` via `!^/(\?|$)`. Then purge all cache. |
+| `/wp-json/` returns 404 (or JSON 404 in the editor) | `rest_route` rules missing or placed **after** the proxy rule, so `/wp-json` gets proxied to Vercel | Keep both `RewriteRule ^wp-json... index.php?rest_route=...` lines **before** the proxy rule (Variant 1 has them) |
+| Pages don't save in wp-admin | Same REST issue — the editor's save call hits `/wp-json/wp/v2/...` | Same fix as above; verify with `curl https://<cms-domain>/wp-json/wp/v2/types` (should return JSON) |
+| Old v1 proxy output ("HTTP/2 200 ..." text at top of pages) | `public_html/proxy.php` is still v1 | Overwrite with `wordpress/proxy.php` (v3) |
+| Rules look right but nothing changes | Hostinger/LiteSpeed page cache serving a stale copy | hPanel → Cache → **Purge All** (+ purge in the LiteSpeed caching plugin if active) |
+
+If `.htaccess` has a syntax error the server returns **500** — re-check the
+file against Variant 1 character-by-character (the custom rules must sit
+**above** the `# BEGIN WordPress` block so WordPress's permalink save never
+overwrites them).
 
 ## How it works (chosen method)
 

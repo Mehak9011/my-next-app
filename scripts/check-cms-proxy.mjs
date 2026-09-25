@@ -60,10 +60,15 @@ await checkPage(
   `${base}/proxy.php?_cmx=1&cmx_path=/about/`
 );
 
-console.log(`
-How to read this:
+console.log(`\nHow to read this:
   • home/about show Next.js + X-CMX-Proxy header  → proxy is LIVE ✅
-  • home/about show WordPress theme, no header     → .htaccess not installed yet
+  • header value must be "codexmattrix-php-front-proxy v3" — if it says
+    v1 (or shows "HTTP/2 200 ..." text at top of body) overwrite
+    public_html/proxy.php with wordpress/proxy.php from this repo.
+  • home shows WordPress theme ("Cms / Home" + logo) but /about/ shows
+    Next.js → site-root .htaccess was NOT replaced yet (or Hostinger
+    cache not purged). Replace WHOLE .htaccess with Variant 1 of
+    wordpress/htaccess-frontend-proxy.txt (it has the explicit "^$" homepage rule).
   • only the direct-hit shows Next.js              → proxy.php uploaded OK,
     just replace the site-root .htaccess with Variant 1 of
     wordpress/htaccess-frontend-proxy.txt

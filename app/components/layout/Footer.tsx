@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Container from "@/app/components/ui/Container";
-import { site } from "@/app/lib/site";
+import { navLinks, site } from "@/app/lib/site";
 
 /** Outlined wordmark words for the footer marquee. */
 const MARQUEE_WORDS: Array<{ plain: string; strong: string }> = [
@@ -15,14 +15,7 @@ const SERVICE_LINKS = [
   { label: "Banner & Advertising Graphics", href: "/services#brand" },
 ];
 
-const COMPANY_LINKS = [
-  { label: "About", href: site.links.about },
-  { label: "Services", href: site.links.services },
-  { label: "Process", href: site.links.process },
-  { label: "Case Studies", href: site.links.caseStudies },
-  { label: "Pricing", href: site.links.pricing },
-  { label: "Contact", href: site.links.contact },
-];
+const COMPANY_LINKS = navLinks;
 
 /** Dark site footer: marquee wordmark, columns, presence, fine print. */
 export default function Footer() {

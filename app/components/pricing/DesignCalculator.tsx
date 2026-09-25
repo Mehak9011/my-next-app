@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import type { PricingDesignTab, PricingQuestion } from "@/app/lib/content/types";
 
 interface DesignCalculatorProps {
-  design: PricingDesignTab;
+  /** Designing tab content, or the middle Development tab (id omitted). */
+  design: Omit<PricingDesignTab, "id">;
   contactHref: string;
 }
 
@@ -24,6 +25,9 @@ function cleanTitle(title: string) {
 /** Design-tab calculator â€” questions, conditional website flow, sticky summary. */
 export default function DesignCalculator({ design, contactHref }: DesignCalculatorProps) {
   const [selections, setSelections] = useState<Record<string, Selection>>({});
+  // Explicit Yes/No answers drive the sequential reveal — and stop
+  // unanswered questions from looking like "No" was already picked.
+  const [answers, setAnswers] = useState<Record<string, "yes" | "no">>({});
   const [showWebsite, setShowWebsite] = useState(false);
   const [websiteType, setWebsiteType] = useState<"static" | "ecommerce" | null>(null);
   const [productKey, setProductKey] = useState<string | null>(null);
@@ -43,6 +47,7 @@ export default function DesignCalculator({ design, contactHref }: DesignCalculat
   );
 
   function setSimple(question: PricingQuestion, choice: "yes" | "no") {
+    setAnswers((prev) => ({ ...prev, [question.key]: choice }));
     setSelections((prev) => {
       const next = { ...prev };
       if (choice === "yes") {
@@ -55,6 +60,7 @@ export default function DesignCalculator({ design, contactHref }: DesignCalculat
   }
 
   function handleWebsiteAnswer(choice: "yes" | "no") {
+    setAnswers((prev) => ({ ...prev, website: choice }));
     if (choice === "no") {
       setShowWebsite(false);
       setWebsiteType(null);
@@ -103,13 +109,34 @@ export default function DesignCalculator({ design, contactHref }: DesignCalculat
     });
   }
 
+  /** A question counts as answered once its (conditional) flow is complete. */
+  function isAnswered(question: PricingQuestion): boolean {
+    const answer = answers[question.key];
+    if (question.mode === "website") {
+      if (answer === "no") return true;
+      if (answer !== "yes") return false;
+      if (!websiteType) return false;
+      return websiteType !== "ecommerce" || productKey !== null;
+    }
+    return answer !== undefined;
+  }
+
+  // Sequential reveal: a question shows only after every earlier one
+  // has been answered (Yes or No).
+  const revealed = design.questions.map((_, index) =>
+    design.questions.slice(0, index).every((earlier) => isAnswered(earlier))
+  );
+
   return (
     <div className="pricing-calculator">
       <div className="pricing-questions">
-        {design.questions.map((question) => {
+        {design.questions.map((question, questionIndex) => {
+          if (!revealed[questionIndex]) return null;
+
           const isWebsite = question.mode === "website";
-          const yesSelected = isWebsite ? showWebsite : Boolean(selections[question.key]);
-          const noSelected = isWebsite ? !showWebsite : !selections[question.key];
+          const answer = answers[question.key];
+          const yesSelected = answer === "yes";
+          const noSelected = answer === "no";
 
           return (
             <div className="pricing-question" key={question.key}>

@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import ComingSoonPage from "@/app/components/ComingSoonPage";
+import ServiceDetails from "@/app/components/services/ServiceDetails";
+import ServiceOverview from "@/app/components/services/ServiceOverview";
+import ServiceResults from "@/app/components/services/ServiceResults";
+import ServiceSupport from "@/app/components/services/ServiceSupport";
+import ServicesCta from "@/app/components/services/ServicesCta";
+import ServicesHero from "@/app/components/services/ServicesHero";
+import { defaultServicesContent } from "@/app/lib/content/services";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -7,13 +13,18 @@ export const metadata: Metadata = {
     "Custom design, web, mobile, software, SaaS and AI automation services by CodeXmattriX.",
 };
 
-/**
- * Services page. Showing the shared "Coming Soon" view for now.
- *
- * The previous design is kept in git history (commit 6b5a0ef) and will be
- * rebuilt when the inner pages are designed.
- * WordPress registers the /services/ URL via the page registry.
- */
+/** Services — a project-owned, fully designed Next.js page. */
 export default function ServicesPage() {
-  return <ComingSoonPage title="Services" />;
+  const content = defaultServicesContent;
+
+  return (
+    <div className="services-page">
+      <ServicesHero hero={content.hero} />
+      <ServiceOverview overview={content.overview} />
+      <ServiceDetails intro={content.detailsIntro} details={content.details} />
+      <ServiceResults results={content.results} />
+      <ServiceSupport support={content.support} />
+      <ServicesCta cta={content.cta} points={content.support.points} />
+    </div>
+  );
 }

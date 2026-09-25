@@ -28,6 +28,7 @@ export default async function PricingPage() {
 
       <PricingTabs
         design={content.design}
+        webdev={content.webdev}
         development={content.development}
         contactHref={pricingContactHref}
       />

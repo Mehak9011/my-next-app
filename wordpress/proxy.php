@@ -3,17 +3,29 @@
  * ============================================================
  * CodeXmattriX — Full-headless front-end proxy (chosen wiring)
  * ============================================================
- * v2 — fixes "raw HTTP headers in body" bug: CURLOPT_HEADER is OFF,
- * headers are captured with CURLOPT_HEADERFUNCTION (safe for HTTP/2 +
- * gzip). FOLLOWLOCATION stays OFF — 3xx is re-emitted with Location
- * rewritten to the CMS host.
+ * v3 — homepage fix + header-safe:
+ *   • CURLOPT_HEADER OFF + HEADERFUNCTION (HTTP/2 + gzip safe).
+ *     v1 proxy leaked "HTTP/2 200 ..." text into /about/, /contact/
+ *     because it split combined redirect headers on the FIRST blank
+ *     line. v2/v3 never mix headers into the body.
+ *   • FOLLOWLOCATION OFF — Vercel 308 (/about/ → /about) is re-emitted
+ *     with Location rewritten to the CMS host, browser follows on CMS.
+ *   • "/" (homepage) is proxied to Next.js "/" (app/page.tsx) like any
+ *     other path. If "/" still shows the WordPress theme ("Cms / Home"
+ *     + logo only), the site-root .htaccess was NOT replaced yet or the
+ *     Hostinger/LiteSpeed cache was not purged — see Variant 1 in
+ *     wordpress/htaccess-frontend-proxy.txt + step 5 of
+ *     wordpress/README-wordpress-setup.md.
  * INSTALL (Hostinger hPanel)
  *   1. File Manager → public_html →
- *      upload this file as  proxy.php
+ *      upload this file as  proxy.php  (overwrite the old v1 file)
  *   2. Open  .htaccess  (create it if missing) and replace its
  *      WHOLE content with Variant 1 of wordpress/htaccess-frontend-proxy.txt
- *   3. Open https://cms.codexmattrix.com/about/  → you should see
- *      the Next.js About page with the CMS URL in the address bar.
+ *      (it contains an explicit "^$" rule for the homepage)
+ *   3. Purge cache (Hostinger → Cache → Purge All / LiteSpeed plugin)
+ *   4. Open https://cms.codexmattrix.com/  → Next.js Home must render.
+ *      Open https://cms.codexmattrix.com/about/ → clean Next.js About
+ *      (no "HTTP/2 200 ..." text at the top).
  * ============================================================
  */
 
@@ -61,6 +73,10 @@ $target = rtrim( $CMX_NEXT_ORIGIN, '/' ) . ( '' !== $path ? $path : '/' );
 // browser proves the proxy + Vercel origin work even when the .htaccess
 // rewrite has not been installed yet. Without this, a direct hit would ask
 // Vercel for "/proxy.php" (404) instead of the page you want to preview.
+// NOTE: "/" (homepage) is proxied like any other path — $path "/" targets
+// the Next.js "/" (app/page.tsx). If "/" still shows the WordPress theme,
+// the site-root .htaccess was NOT replaced / Hostinger cache was not purged
+// (see wordpress/htaccess-frontend-proxy.txt Variant 1 + README).
 if ( '/proxy.php' === $path ) {
 	$test_path = '/' . ltrim( ( $_GET['cmx_path'] ?? '/' ), '/' );
 	$target    = rtrim( $CMX_NEXT_ORIGIN, '/' ) . $test_path;
@@ -173,7 +189,7 @@ if ( isset( $upstream_headers['location'][0] ) ) {
 	}
 }
 
-header( 'X-CMX-Proxy', 'codexmattrix-php-front-proxy v2', false );
+header( 'X-CMX-Proxy', 'codexmattrix-php-front-proxy v3', false );
 http_response_code( $status );
 
 // Redirects carry no body — stop here so no stray bytes are printed.

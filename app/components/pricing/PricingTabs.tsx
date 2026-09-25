@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import Container from "@/app/components/ui/Container";
 import SectionHeader from "@/app/components/ui/SectionHeader";
@@ -9,43 +10,60 @@ import DevelopmentPlans from "./DevelopmentPlans";
 
 interface PricingTabsProps {
   design: PricingContent["design"];
+  webdev: PricingContent["webdev"];
   development: PricingContent["development"];
   contactHref: string;
 }
 
-/** "Custom Premium" / "Digital Marketing & SEO" switch + tab panels. */
-export default function PricingTabs({ design, development, contactHref }: PricingTabsProps) {
-  const [active, setActive] = useState<"design" | "development">("design");
+type TabKey = "design" | "webdev" | "development";
+
+/**
+ * Designing / Development / Digital Marketing & SEO switch + tab panels.
+ * The middle "Development" tab is always visible: with WordPress ACF
+ * data (webdev.cmsReady) it shows the Yes/No calculator, otherwise a
+ * heading + quote-CTA empty state — never placeholder prices.
+ */
+export default function PricingTabs({
+  design,
+  webdev,
+  development,
+  contactHref,
+}: PricingTabsProps) {
+  const [active, setActive] = useState<TabKey>("design");
+
+  const tabs: Array<{ key: TabKey; label: string }> = [
+    { key: design.id, label: design.tabLabel },
+    { key: webdev.id, label: webdev.tabLabel },
+    { key: development.id, label: development.tabLabel },
+  ];
 
   return (
-    <div className="pb-[100px]">
+    <section
+      id="pricing-tabs"
+      className="pricing-calculator-section"
+      aria-label="Pricing calculator"
+    >
       <Container>
-        <div className="mb-[50px] flex justify-center">
-          <div className="pricing-switch" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={active === "design"}
-              className={`pricing-switch-btn${active === "design" ? " is-active" : ""}`}
-              onClick={() => setActive("design")}
-            >
-              {design.tabLabel}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={active === "development"}
-              className={`pricing-switch-btn${active === "development" ? " is-active" : ""}`}
-              onClick={() => setActive("development")}
-            >
-              {development.tabLabel}
-            </button>
+        <div className="pricing-switch-wrap">
+          <div className="pricing-switch" role="tablist" aria-label="Pricing services">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active === tab.key}
+                className={`pricing-switch-btn${active === tab.key ? " is-active" : ""}`}
+                onClick={() => setActive(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {active === "design" ? (
-          <section id="design">
-            <div className="mb-[45px] text-center">
+          <section id="design" className="pricing-tab-panel">
+            <div className="pricing-panel-heading">
               <SectionHeader kicker={design.kicker} kickerCentered>
                 {design.heading}
               </SectionHeader>
@@ -55,8 +73,32 @@ export default function PricingTabs({ design, development, contactHref }: Pricin
             </div>
             <DesignCalculator design={design} contactHref={contactHref} />
           </section>
+        ) : active === "webdev" ? (
+          <section id="webdev" className="pricing-tab-panel">
+            {webdev.cmsReady ? (
+              <DesignCalculator design={webdev} contactHref={contactHref} />
+            ) : (
+              <div>
+                <div className="pricing-panel-heading">
+                  <SectionHeader kicker={webdev.kicker} kickerCentered>
+                    {webdev.heading}
+                  </SectionHeader>
+                  <p className="mx-auto mt-3 max-w-[560px] text-[15px] text-slate">
+                    {webdev.sub}
+                  </p>
+                </div>
+                {/* No CMS plan data yet — heading + quote CTA only,
+                    never placeholder prices (per content requirement). */}
+                <div className="pricing-empty">
+                  <Link href={contactHref} className="btn-primary">
+                    Request a Custom Quote →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </section>
         ) : (
-          <section id="development">
+          <section id="development" className="pricing-tab-panel">
             <DevelopmentPlans
               kicker={development.kicker}
               heading={development.heading}
@@ -67,6 +109,6 @@ export default function PricingTabs({ design, development, contactHref }: Pricin
           </section>
         )}
       </Container>
-    </div>
+    </section>
   );
 }

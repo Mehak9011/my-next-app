@@ -12,8 +12,8 @@ import type { AboutContent } from "./types";
 export const defaultAboutContent: AboutContent = {
   hero: {
     kicker: "About Us",
-    title:
-      "A small team of designers & developers who care about the outcome.",
+    title: "A small team of designers & developers",
+    titleAccent: "who care about the outcome.",
     subtitle:
       "We are CodeXmattriX — a design and development studio based in Dharamshala, India, building high-performing websites, apps and software for growing US brands.",
     ctaLabel: "Book a Free Consultation",

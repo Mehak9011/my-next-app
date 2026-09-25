@@ -12,7 +12,7 @@ export default function SectionHeader({
   size = "md",
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   kicker?: string;
   kickerCentered?: boolean;
   size?: "md" | "lg";
@@ -24,7 +24,17 @@ export default function SectionHeader({
   return (
     <div className={className}>
       {kicker ? <Kicker centered={kickerCentered}>{kicker}</Kicker> : null}
-      <h2 className={`section-title ${sizeClass}`}>{children}</h2>
+      {/* .section-title has max-width:600px — without mx-auto its box sits
+          left even when the section text-centers. kickerCentered marks a
+          centered header block, so center the box too (matches home/about
+          headers like "section-title mx-auto text-center"). */}
+      <h2
+        className={`section-title ${sizeClass}${
+          kickerCentered ? " mx-auto text-center" : ""
+        }`}
+      >
+        {children}
+      </h2>
     </div>
   );
 }

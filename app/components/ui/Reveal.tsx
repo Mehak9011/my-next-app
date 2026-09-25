@@ -38,6 +38,30 @@ export default function Reveal({
     const node = ref.current;
     if (!node) return;
 
+    // Never hide content when scripting, observers, or full-page capture are
+    // unavailable. The animation is an enhancement, not a visibility gate.
+    if (typeof IntersectionObserver === "undefined") {
+      const fallback = window.setTimeout(() => setVisible(true), 0);
+      return () => window.clearTimeout(fallback);
+    }
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reducedMotion.matches) {
+      const settle = window.setTimeout(() => setVisible(true), 0);
+      return () => window.clearTimeout(settle);
+    }
+
+    const revealImmediately = () => {
+      const bounds = node.getBoundingClientRect();
+      if (bounds.top < window.innerHeight && bounds.bottom > 0) {
+        setVisible(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (revealImmediately()) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -47,11 +71,21 @@ export default function Reveal({
           }
         });
       },
-      { threshold }
+      { threshold, rootMargin: "160px 0px" }
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    const fallback = window.setTimeout(() => setVisible(true), 1800);
+    const onLoad = () => {
+      if (revealImmediately()) observer.disconnect();
+    };
+
+    window.addEventListener("load", onLoad, { once: true });
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallback);
+      window.removeEventListener("load", onLoad);
+    };
   }, [threshold]);
 
   return (

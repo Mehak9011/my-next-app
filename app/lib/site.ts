@@ -35,9 +35,16 @@ export interface NavLink {
   href: string;
 }
 
+/**
+ * Primary navigation — deliberately the SAME entry list as the footer's
+ * "Company" column, so the header and footer menus can never drift apart.
+ * Both components read this array (single source of truth).
+ */
 export const navLinks: NavLink[] = [
+  { label: "About", href: site.links.about },
   { label: "Services", href: site.links.services },
-  { label: "Industries", href: site.links.caseStudies },
-  { label: "Work", href: site.links.work },
-  { label: "FAQ", href: site.links.faq },
+  { label: "Process", href: site.links.process },
+  { label: "Case Studies", href: site.links.caseStudies },
+  { label: "Pricing", href: site.links.pricing },
+  { label: "Contact", href: site.links.contact },
 ];

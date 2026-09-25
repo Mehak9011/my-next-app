@@ -7,8 +7,12 @@ import Container from "@/app/components/ui/Container";
 import { navLinks, site } from "@/app/lib/site";
 
 /**
- * Sticky site header with brand logo, desktop nav (≥860px) and a
+ * Sticky site header with brand logo, desktop nav (≥1024px) and a
  * mobile hamburger menu. Fully matches the original design.
+ *
+ * The nav entries come from `navLinks` — the same list the footer's
+ * "Company" column renders (About, Services, Process, Case Studies,
+ * Pricing, Contact).
  *
  * The nav links react to hover and to the current route: the desktop link
  * grows a crimson underline, the mobile row turns crimson with a left bar
@@ -43,8 +47,8 @@ export default function Header() {
           />
         </Link>
 
-        {/* Desktop nav (≥860px) */}
-        <nav className="hidden min-[860px]:flex items-center gap-8">
+        {/* Desktop nav (≥1024px) — 6 entries, so the row needs lg width */}
+        <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
           {navLinks.map((link, index) => {
             const active = index === activeIndex;
 
@@ -74,7 +78,7 @@ export default function Header() {
             aria-label="Toggle menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:border-slate min-[860px]:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:border-slate lg:hidden"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               {open ? (
@@ -99,7 +103,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-line bg-white min-[860px]:hidden">
+        <div className="border-t border-line bg-white lg:hidden">
           <nav className="flex flex-col px-8 py-4">
             {navLinks.map((link, index) => {
               const active = index === activeIndex;

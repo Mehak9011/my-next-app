@@ -39,4 +39,13 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Local browser/audit artifacts — keep them out of Tailwind/Turbopack scans.
+.cline-chrome-*/
+.cline-*.html
+.cline-*.log
+.cline-*.png
+.cline-*.txt
+.cline-*.mjs
+
 next-env.d.ts

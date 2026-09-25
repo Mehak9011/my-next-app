@@ -12,7 +12,7 @@ import { site } from "@/app/lib/site";
  */
 
 /** Empty website/product slots for the non-website questions. */
-const emptyQuestionSlots: Pick<
+export const emptyQuestionSlots: Pick<
   PricingQuestion,
   | "websitePrompt"
   | "websiteTypes"
@@ -209,6 +209,28 @@ export const defaultPricingContent: PricingContent = {
       },
     ],
   },
+  webdev: {
+    id: "webdev",
+    // Empty until runtime: wordpress.ts builds questions[] DYNAMICALLY
+    // from the Development post's ACF fields (one Yes/No question per
+    // priced field). With no post / no priced field cmsReady stays
+    // false and PricingTabs shows the heading + quote-CTA empty
+    // state — placeholder questions never render.
+    cmsReady: false,
+    tabLabel: "Development",
+    kicker: "Development",
+    heading: "What Does Your Project Need?",
+    sub: "Select Yes or No and we'll calculate your estimated price.",
+    questions: [],
+    summaryLabel: "Your Package",
+    summaryTitle: "Estimated Investment",
+    emptyText:
+      "Select your requirements and your selected services will appear here.",
+    totalLabel: "Estimated Total",
+    totalNote:
+      "Final pricing may vary depending on project requirements and complexity.",
+    ctaLabel: "Request This Package →",
+  },
   cta: {
     title: "Have a bigger project in mind?",
     subtitle:
@@ -216,5 +238,9 @@ export const defaultPricingContent: PricingContent = {
     buttonLabel: "Talk To Our Experts →",
   },
 };
+
+// The middle tab's questions are built at runtime in
+// applyPricingPosts() (app/lib/wordpress.ts) — one Yes/No question
+// per priced ACF field on the "development" post. Nothing bundled.
 
 export const pricingContactHref = site.links.contact;

@@ -1,25 +1,39 @@
 import Link from "next/link";
-import Container from "@/app/components/ui/Container";
-import Kicker from "@/app/components/ui/Kicker";
 import type { AboutContent } from "@/app/lib/content/types";
 import { site } from "@/app/lib/site";
+import PageBanner from "@/app/components/layout/PageBanner";
+import BannerCard from "@/app/components/layout/BannerCard";
 
-/** About hero — kicker, display title, subtitle, CTAs and trust badge. */
+/** Trust chips shown under the copy. */
+const BADGES = [
+  { spark: "★", label: "15+ US projects delivered" },
+  { spark: "⚡", label: "Design + build under one roof" },
+  { spark: "🛡️", label: "Support after launch" },
+];
+
+/** Why teams hire us — the same promises as the rest of the site. */
+const PROMISES = [
+  "Design-first builds — every layout is decided before code, not after.",
+  "Fixed scope and fixed price — confirmed before anyone starts building.",
+  "Weekly demos in plain English — you always know where things stand.",
+  "Post-launch support — included with the project, not an upsell.",
+];
+
+/** About banner — the shared split PageBanner with the promises card. */
 export default function AboutHero({ hero }: { hero: AboutContent["hero"] }) {
   return (
-    <section className="pt-[110px] pb-[80px] text-center">
-      <Container>
-        <div className="flex justify-center">
-          <Kicker>{hero.kicker}</Kicker>
-        </div>
-
-        <h1 className="hero-title mx-auto mb-6 max-w-[920px]">{hero.title}</h1>
-
-        <p className="mx-auto mb-9 max-w-[620px] text-[18px] leading-relaxed text-slate">
-          {hero.subtitle}
-        </p>
-
-        <div className="mb-4 flex flex-wrap items-center justify-center gap-[14px]">
+    <PageBanner
+      kicker={hero.kicker}
+      title={
+        <>
+          {hero.title}{" "}
+          <span className="text-crimson">{hero.titleAccent}</span>
+        </>
+      }
+      subtitle={hero.subtitle}
+      badges={BADGES}
+      actions={
+        <div className="page-banner-actions">
           <Link href={site.links.contact} className="btn-primary">
             {hero.ctaLabel}
           </Link>
@@ -27,11 +41,20 @@ export default function AboutHero({ hero }: { hero: AboutContent["hero"] }) {
             {hero.secondaryLabel}
           </Link>
         </div>
-
-        <p className="text-[13px] font-medium tracking-wide text-slate-light">
-          {hero.trustBadge}
-        </p>
-      </Container>
-    </section>
+      }
+      note={hero.trustBadge}
+      aside={
+        <BannerCard
+          title="Why teams hire us"
+          sub="The same promises on every project — design, build and beyond."
+          rows={PROMISES}
+          linkChips={[
+            { label: "💬 WhatsApp", href: site.whatsappUrl, external: true },
+            { label: "✉️ Email", href: `mailto:${site.email}` },
+          ]}
+          note="Based in Dharamshala, India — working across US time zones."
+        />
+      }
+    />
   );
 }

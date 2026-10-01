@@ -36,7 +36,17 @@ The visitor is never redirected to `/contact`.
 ### Install
 
 1. **Upload the plugin** — wp-admin → Plugins → **Add New** → **Upload Plugin**
-   → choose `wordpress/cmx-enquiries.php` → Install → **Activate**.
+   → choose `wordpress/dist/cmx-enquiries.zip` → **Replace** current → **Activate**.
+
+   > Upload the **zip**, not the raw `.php`. Some hosts (Hostinger included)
+   > strip a missing WordPress core file (`wp-admin/edit-theme-plugin-file.php`),
+   > which breaks **Appearance → Editor** and **Plugins → Editor** with
+   > *"Unable to communicate back with site to check for fatal errors"*. Uploading
+   > a zip does not go through that editor, so it keeps working.
+   >
+   > If you ever need that editor back: wp-admin → Dashboard → Updates →
+   > **Re-install Now**.
+
 2. **Configure it in `wp-config.php`**, added *above* the
    `/* That's all, stop editing! */` line (use hPanel → File Manager →
    `public_html/wp-config.php`, or any FTP client):
@@ -67,8 +77,10 @@ The visitor is never redirected to `/contact`.
 ### Where to see a lead
 
 **wp-admin → Enquiries** lists every lead (From / Email / Phone / Source /
-Estimate / Emailed / Received). Click any row to open the **Requested
-package** panel, which shows:
+**Selected services** / Estimate / Emailed / Received). The **Selected
+services** column lists every line the visitor picked with its price, and
+hovering it shows the same list one per line. Click any row to open the
+**Requested package** panel, which shows:
 
 - every service the visitor selected, with its price
 - the **estimated total**

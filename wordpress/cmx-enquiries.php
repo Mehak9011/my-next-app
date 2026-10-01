@@ -6,7 +6,7 @@
  *              frontend as a WordPress post and emails the site
  *              owner. Powers the "Request This Package" flow on
  *              /pricing (no redirect to /contact).
- * Version:     1.0.0
+ * Version:     1.1.0
  * Requires PHP: 7.4
  * Author:      CodeXmattriX
  * Text Domain: codexmattrix
@@ -137,6 +137,7 @@ add_filter(
 			'cmx_email'  => __( 'Email', 'codexmattrix' ),
 			'cmx_phone'  => __( 'Phone', 'codexmattrix' ),
 			'cmx_source' => __( 'Source', 'codexmattrix' ),
+			'cmx_package' => __( 'Selected services', 'codexmattrix' ),
 			'cmx_total'  => __( 'Estimate', 'codexmattrix' ),
 			'cmx_mailed' => __( 'Emailed', 'codexmattrix' ),
 			'date'       => __( 'Received', 'codexmattrix' ),
@@ -150,12 +151,51 @@ add_filter(
 add_action(
 	'manage_cmx_enquiry_posts_custom_column',
 	function ( $column, $post_id ) {
+		// Defensive guard: a missing/zero ID would make get_post_meta()
+		// throw a TypeError on PHP 8, which killed the entire list table.
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+
 		$get = function ( $key ) use ( $post_id ) {
 			$value = get_post_meta( $post_id, $key, true );
 			return ( '' === $value || false === $value ) ? '' : $value;
 		};
 
 		switch ( $column ) {
+			case 'cmx_package':
+				$package = json_decode( $get( '_cmx_package' ), true );
+				if ( ! is_array( $package ) || empty( $package ) ) {
+					echo '<span style="color:#646970;">—</span>';
+					break;
+				}
+
+				// Show every selected service inline, so the list alone
+				// answers "what did this visitor pick?" without opening
+				// the row. Hovering reveals the full set plus each price.
+				$names = array();
+
+				foreach ( $package as $item ) {
+					if ( ! is_array( $item ) || empty( $item['service'] ) ) {
+						continue;
+					}
+					$price   = (float) ( isset( $item['price'] ) ? $item['price'] : 0 );
+					$names[] = sprintf( '%s ($%s)', $item['service'], number_format_i18n( $price, 0 ) );
+				}
+
+				if ( empty( $names ) ) {
+					echo '<span style="color:#646970;">—</span>';
+					break;
+				}
+
+				printf(
+					'<span title="%1$s">%2$s</span>',
+					esc_attr( implode( "\n", $names ) ),
+					esc_html( implode( ' · ', $names ) )
+				);
+				break;
+
 			case 'cmx_email':
 				$email = $get( '_cmx_email' );
 				if ( $email ) {

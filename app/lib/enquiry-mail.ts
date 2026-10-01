@@ -199,6 +199,14 @@ async function sendViaFormSubmit(
 
   const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
 
+  // FormSubmit only accepts requests that look like they came from a page
+  // on a real site — a bare server-side POST is rejected with "Make sure
+  // you open this page through a web server". Sending an explicit Referer
+  // and Origin is what makes it accept the request.
+  const origin = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://cms.codexmattrix.com"
+  ).replace(/\/+$/, "");
+
   try {
     const response = await fetch(
       `https://formsubmit.co/ajax/${encodeURIComponent(to)}`,
@@ -207,6 +215,8 @@ async function sendViaFormSubmit(
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          Referer: `${origin}/pricing`,
+          Origin: origin,
         },
         body: JSON.stringify({
           _subject: `New pricing enquiry from ${alert.name}${
@@ -230,7 +240,18 @@ async function sendViaFormSubmit(
 
     // FormSubmit answers 200 with {"success":"true"|"false", ...}, so the
     // status alone is not enough to call the send successful.
-    if (!response.ok || !/"success"\s*:\s*"true"/.test(body)) {
+    if (!/"success"\s*:\s*"true"/.test(body)) {
+      // On the very first send to an address FormSubmit emails the owner a
+      // one-time "Activate Form" link and holds the alert until it is
+      // clicked. That is the expected first-run state, not a defect, so
+      // log it as the actionable next step instead of a generic failure.
+      if (/needs Activation|Activate Form/i.test(body)) {
+        console.error(
+          `[enquiry] FormSubmit is holding the alert until ${to} clicks its one-time activation link`
+        );
+        return false;
+      }
+
       console.error(
         "[enquiry] FormSubmit send failed:",
         response.status,

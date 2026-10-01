@@ -20,8 +20,10 @@ export const site = {
   }`,
   /**
    * Enquiry inbox — where "Request This Package" leads are emailed.
-   * The same address is configured on the WordPress side in
-   * wordpress/cmx-enquiries.php (CMX_ENQUIRY_EMAIL). Keep them in sync.
+   * This is the single source of truth in the app: the Resend fallback
+   * (app/lib/enquiry-mail.ts) uses it when ENQUIRY_EMAIL is not set in
+   * the environment. Keep it in sync with CMX_ENQUIRY_EMAIL in
+   * wp-config.php, which is what the WordPress side uses.
    */
   enquiryEmail: "mcodexmattrix@gmail.com",
   links: {

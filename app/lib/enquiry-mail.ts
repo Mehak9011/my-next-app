@@ -11,6 +11,12 @@
  * the platform `fetch`, so no npm package is added to this project.
  * ============================================================
  */
+import { site } from "@/app/lib/site";
+
+/** Loose shape check — the recipient only has to look like an address. */
+function isEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+}
 
 export interface EnquiryAlert {
   name: string;
@@ -94,8 +100,11 @@ export async function sendEnquiryAlert(
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;
 
-  const to = process.env.ENQUIRY_EMAIL;
-  if (!to) return null;
+  // Fall back to the address baked into app/lib/site.ts, so the alert
+  // still has a destination even when ENQUIRY_EMAIL is not set in the
+  // environment. That address is the single source of truth in the app.
+  const to = process.env.ENQUIRY_EMAIL?.trim() || site.enquiryEmail;
+  if (!isEmail(to)) return null;
 
   const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
 

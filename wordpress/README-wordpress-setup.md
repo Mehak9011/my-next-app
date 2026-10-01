@@ -19,6 +19,82 @@ The design and content live **100% in Next.js**.
 | `htaccess-frontend-proxy.txt` | **CHOSEN — the `.htaccess` rules.** Routes every public URL (except `/wp-admin`, `/graphql`, `/wp-json`, `/wp-content` …) to `proxy.php`. Variant 1 = PHP proxy, Variant 2 = Apache `mod_proxy`. | Replace the site-root `.htaccess` content |
 | `htaccess-frontend-redirect.txt` | ALT — 301-redirect every public URL to your live Next.js domain (URL bar changes). Works on all hosting. | Same location (use ONE method) |
 | `cloudflare-worker.js` | ALT — Cloudflare Worker that proxies to Next.js when you put the `cms` subdomain on Cloudflare. | Cloudflare Worker for the `cms` subdomain |
+| `cmx-enquiries.php` | **CHOSEN — enquiry plugin.** Powers "Request This Package" on `/pricing`: stores each lead as a `cmx_enquiry` post (wp-admin → Enquiries) and emails the owner. Registering the `cmx/v1/enquiry` REST route is also why the `.htaccess` must NOT proxy that path. | wp-admin → Plugins → Add New → Upload, or `public_html/wp-content/plugins/cmx-enquiries/` |
+
+---
+
+## Enquiries ("Request This Package") — optional, one-time setup
+
+The pricing calculator's CTA opens an inline form. Submitting it:
+
+1. `POST /api/enquiry` (Next.js server route) validates the payload,
+2. forwards it to `POST /wp-json/cmx/v1/enquiry` with a shared secret,
+3. WordPress saves a `cmx_enquiry` post **and** emails the owner.
+
+The visitor is never redirected to `/contact`.
+
+### Install
+
+1. **Upload the plugin** — wp-admin → Plugins → **Add New** → **Upload Plugin**
+   → choose `wordpress/cmx-enquiries.php` → Install → **Activate**.
+2. **Configure it in `wp-config.php`**, added *above* the
+   `/* That's all, stop editing! */` line (use hPanel → File Manager →
+   `public_html/wp-config.php`, or any FTP client):
+
+   ```php
+   define( 'CMX_ENQUIRY_SECRET', '<64-char hex>' );
+   define( 'CMX_ENQUIRY_EMAIL',  'mcodexmattrix@gmail.com' );
+   // Optional — defaults to the WordPress admin address:
+   // define( 'CMX_ENQUIRY_FROM', 'no-reply@codexmattrix.com' );
+   ```
+
+   Generate a secret with:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+
+   > The secret is deliberately **not** stored in the plugin file, so it
+   > never lands in the public Git repo. If it is missing, wp-admin shows a
+   > red notice and the REST route returns 500 — leads are never accepted
+   > unauthenticated.
+
+3. **Vercel** — Project → Settings → Environment Variables →
+   `WORDPRESS_ENQUIRY_KEY` = the same 64-char secret → **Redeploy**.
+   (Locally, add the same key to `.env.local`.)
+4. **Purge the cache** — hPanel → Cache → Purge All.
+5. **Verify** — `node scripts/verify-enquiry.mjs`
+
+### Where to see a lead
+
+**wp-admin → Enquiries** lists every lead (From / Email / Phone / Source /
+Estimate / Emailed / Received). Click any row to open the **Requested
+package** panel, which shows:
+
+- every service the visitor selected, with its price
+- the **estimated total**
+- their message and contact details
+- whether the email was sent, plus the exact failure reason if not
+
+### Design decisions
+
+- **The secret never reaches the browser** and never enters git — only the
+  server-side route handler reads it from the environment.
+- **Save happens before send.** If `wp_mail()` fails the lead is still in
+  the database — the `Emailed` column shows `no` (hover it for the reason).
+- **`.htaccess` is fine as-is.** The Next.js origin serves `/api/enquiry`
+  itself; the plugin route lives under `/wp-json`, which the existing rules
+  already keep on WordPress.
+- **Spam controls:** honeypot field, same-origin check, and a 5-per-IP
+  rate limit in `/api/enquiry`; plus full sanitisation and length caps in
+  the plugin.
+
+### If the mail lands in spam
+
+Hostinger's shared mail server can trip spam filters. Make sure the site
+domain has **SPF + DKIM** records (hPanel → Email → Mail Domains). If you
+would rather guarantee inbox delivery, the storage stays in WordPress and
+only the send step moves to a transactional provider (Resend, Postmark) —
+that is a change in `app/api/enquiry/route.ts` only.
 
 ---
 

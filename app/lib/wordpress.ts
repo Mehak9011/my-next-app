@@ -976,3 +976,82 @@ export function applyPricingPosts(
 
   return content;
 }
+
+/* ------------------------------------------------------------------
+   Enquiry submission — "Request This Package" on /pricing.
+
+   Writes to the custom `cmx/v1/enquiry` REST route registered by
+   wordpress/cmx-enquiries.php. That route stores the lead as a
+   `cmx_enquiry` post and emails the owner (site.enquiryEmail).
+
+   The shared secret never leaves the server: it is read from
+   WORDPRESS_ENQUIRY_KEY and sent as the X-CMX-Key header, so the
+   browser can only ever talk to our own /api/enquiry route handler.
+   ------------------------------------------------------------------ */
+
+/** One priced line of the requested package. */
+export interface EnquiryItem {
+  service: string;
+  price: number;
+}
+
+export interface EnquiryPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  /** Where the enquiry came from, e.g. "pricing". */
+  source: string;
+  /** The page the visitor submitted from. */
+  page?: string;
+  /** Selected calculator lines (empty for a plain contact enquiry). */
+  package?: EnquiryItem[];
+}
+
+export interface EnquiryResult {
+  ok: boolean;
+  /** False when WordPress stored the lead but the notification failed. */
+  emailed?: boolean;
+  /** The created `cmx_enquiry` post id. */
+  id?: number;
+}
+
+/**
+ * Send an enquiry to WordPress. Throws on any failure so the caller
+ * (the /api/enquiry route handler) can return a 5xx to the client.
+ */
+export async function submitEnquiry(
+  payload: EnquiryPayload
+): Promise<EnquiryResult> {
+  const secret = process.env.WORDPRESS_ENQUIRY_KEY;
+  if (!secret) {
+    throw new Error("WORDPRESS_ENQUIRY_KEY is not configured");
+  }
+  if (!REST_URL) {
+    throw new Error("WORDPRESS_REST_URL is not configured");
+  }
+
+  const url = `${REST_URL.replace(/\/$/, "")}/cmx/v1/enquiry`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CMX-Key": secret,
+    },
+    body: JSON.stringify(payload),
+    // Leads must never be served from a cache — always hit WordPress.
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `WordPress enquiry error: ${response.status}${
+        body ? ` — ${body.slice(0, 200)}` : ""
+      }`
+    );
+  }
+
+  return (await response.json()) as EnquiryResult;
+}

@@ -18,6 +18,12 @@ export const site = {
   whatsappUrl: `https://wa.me/${
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "917832820005"
   }`,
+  /**
+   * Enquiry inbox — where "Request This Package" leads are emailed.
+   * The same address is configured on the WordPress side in
+   * wordpress/cmx-enquiries.php (CMX_ENQUIRY_EMAIL). Keep them in sync.
+   */
+  enquiryEmail: "mcodexmattrix@gmail.com",
   links: {
     services: "/services",
     caseStudies: "/case-studies",

@@ -52,6 +52,7 @@ npm run typecheck   # TypeScript
 npm run lint        # ESLint
 npm run build       # Production build
 node scripts/verify-wordpress.mjs   # Live CMS health check (registry + routes)
+node scripts/verify-enquiry.mjs     # Enquiry wiring check (storage + email)
 ```
 
 ---
@@ -183,8 +184,41 @@ node scripts/make-favicons.mjs path/to/new.png  # or another square source
 | `WORDPRESS_GRAPHQL_URL` | `https://cms.codexmattrix.com/graphql` |
 | `WORDPRESS_REST_URL` | `https://cms.codexmattrix.com/wp-json` |
 | `WORDPRESS_TIMEOUT_MS` | CMS request timeout (default `8000`) |
+| `WORDPRESS_ENQUIRY_KEY` | Shared secret for the enquiry REST route — must match `CMX_ENQUIRY_SECRET` in `wordpress/cmx-enquiries.php` |
 
 Set these in Vercel → Project → Settings → Environment Variables, then redeploy.
+
+---
+
+## "Request This Package" → WordPress + email
+
+The `/pricing` CTA no longer redirects to `/contact`. It opens an inline
+form; submitting it saves the lead in WordPress **and** emails the owner.
+
+```
+Browser ── POST /api/enquiry ──► Next.js route handler (validates, rate-limits,
+   ▲                              adds the shared secret — server-side only)
+   │                                       │
+   │                            POST /wp-json/cmx/v1/enquiry  (X-CMX-Key)
+   │                                       ▼
+   └─────── success + WhatsApp/email backup ◄── WordPress: save `cmx_enquiry`
+                                              post, then wp_mail() the owner
+```
+
+| Piece | File |
+| --- | --- |
+| Plugin (storage + `wp_mail`) | `wordpress/cmx-enquiries.php` |
+| Server route (validation + secret) | `app/api/enquiry/route.ts` |
+| CMS client | `submitEnquiry()` in `app/lib/wordpress.ts` |
+| Inline form | `app/components/pricing/EnquiryForm.tsx` |
+| CTA wiring | `app/components/pricing/DesignCalculator.tsx` |
+| Health check | `scripts/verify-enquiry.mjs` |
+
+Leads appear in **wp-admin → Enquiries** (From / Email / Phone / Source /
+Estimate / Emailed / Received) and the notification goes to the address in
+`CMX_ENQUIRY_EMAIL` — its `Reply-To` is the customer, so replying answers
+them directly. Full install steps:
+[`wordpress/README-wordpress-setup.md`](./wordpress/README-wordpress-setup.md).
 
 ---
 

@@ -596,9 +596,11 @@ Tailwind v4 (`@tailwindcss/postcss`), TypeScript, ESLint.
 | --- | --- | --- |
 | 1 | **Deploy the uncommitted work** | `git push` → CI → Vercel. Live site currently runs the older 2-tab pricing code |
 | 2 | **Upload `proxy.php` v3 + Variant 1 `.htaccess`** to `public_html/`, then purge cache | server-side only; without it `/` still shows the WP theme |
+| 2b | **Install + activate `wordpress/cmx-enquiries.php`**, then set `WORDPRESS_ENQUIRY_KEY` in Vercel | without this the pricing enquiry form returns "couldn't send" — verify with `node scripts/verify-enquiry.mjs` |
 | 3 | **Pricing:** optional per-tab hero image + `subtext` overrides via ACF | hero copy already merges from the page group |
 | 4 | **Pricing:** multi-currency / discount logic | the calculator totals are plain integers today |
-| 5 | **Contact form:** currently client-side only | wire it to a real endpoint (WP form plugin, Resend, or a Next route handler) |
+| 5 | **Contact form:** still the old mailto/WhatsApp handoff | the pricing enquiry is now wired end-to-end; `/contact` can reuse `POST /api/enquiry` (send `source: "contact"`) |
+| 5b | **Enquiry mail deliverability** | `wp_mail()` depends on the host's mail server — add SPF/DKIM for the domain, or move only the send step to Resend in `app/api/enquiry/route.ts` |
 | 6 | **Inner pages:** build About / Services / FAQ / Process / Case Studies | all Coming Soon; designs + content models already parked |
 | 7 | **SEO layer:** `sitemap.xml` / `robots.txt` route handlers, per-page OG images | metadata exists per page; sitemap not generated yet |
 | 8 | **Tests:** no unit/e2e suite yet — only the `scripts/*.mjs` health checks | candidates: pricing merge, sequential reveal, registry lookup |
@@ -619,6 +621,9 @@ Tailwind v4 (`@tailwindcss/postcss`), TypeScript, ESLint.
 | Front-end hand-off (proxy / redirect) | `wordpress/proxy.php`, `wordpress/htaccess-frontend-proxy.txt` |
 | WordPress one-time setup & troubleshooting | `wordpress/README-wordpress-setup.md` |
 | Pricing ACF field reference | `wordpress/pricing-acf-setup.md` |
+| Enquiry storage + owner notification (WP side) | `wordpress/cmx-enquiries.php` |
+| Enquiry validation / spam guard (Next side) | `app/api/enquiry/route.ts` |
+| Enquiry form UI + copy | `app/components/pricing/EnquiryForm.tsx` |
 | CI / deploy behaviour | `.github/workflows/ci.yml`, `vercel.json`, `next.config.ts` |
 
 ---
@@ -630,6 +635,7 @@ Tailwind v4 (`@tailwindcss/postcss`), TypeScript, ESLint.
 - [ ] `npm run build` succeeds
 - [ ] `/pricing`, `/` and `/contact` render locally (CMS on **and** off)
 - [ ] If `.env` was touched, `.env.example` documents the new variable
+- [ ] If enquiries changed: `node scripts/verify-enquiry.mjs` passes
 - [ ] If the host was touched, the cache was purged and
       `node scripts/check-cms-proxy.mjs <host>` passes
 - [ ] Committed with a message describing the user-visible change and pushed to

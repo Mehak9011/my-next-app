@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PricingDesignTab, PricingQuestion } from "@/app/lib/content/types";
+import EnquiryForm from "@/app/components/pricing/EnquiryForm";
 
 interface DesignCalculatorProps {
   /** Designing tab content, or the middle Development tab (id omitted). */
@@ -31,6 +32,8 @@ export default function DesignCalculator({ design, contactHref }: DesignCalculat
   const [showWebsite, setShowWebsite] = useState(false);
   const [websiteType, setWebsiteType] = useState<"static" | "ecommerce" | null>(null);
   const [productKey, setProductKey] = useState<string | null>(null);
+  // Whether the inline "Request This Package" form is open in the summary.
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
 
   const websiteQuestion = useMemo(
     () => design.questions.find((q) => q.mode === "website"),
@@ -256,9 +259,28 @@ export default function DesignCalculator({ design, contactHref }: DesignCalculat
           <p className="pricing-total-note">{design.totalNote}</p>
         </div>
 
-        <a href={contactHref} className="btn-primary pricing-summary-btn">
-          {design.ctaLabel}
-        </a>
+        {/* "Request This Package" opens an inline form that stores the lead
+            in WordPress and emails the owner — the visitor is NOT sent to
+            /contact. `contactHref` stays available as the fallback link
+            inside the form if the network call fails. */}
+        {enquiryOpen ? (
+          <EnquiryForm
+            packageItems={selectedItems}
+            total={total}
+            submitLabel={design.ctaLabel}
+            fallbackHref={contactHref}
+            onDone={() => setEnquiryOpen(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            className="btn-primary pricing-summary-btn w-full justify-center"
+            onClick={() => setEnquiryOpen(true)}
+            disabled={selectedItems.length === 0}
+          >
+            {design.ctaLabel}
+          </button>
+        )}
       </aside>
     </div>
   );

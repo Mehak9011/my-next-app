@@ -142,6 +142,66 @@ export interface AboutContent {
 }
 
 /* ------------------------------------------------------------------
+   Process page — bundled Next.js content (app/lib/content/process.ts).
+   Mirrors the /our-process/ page structure: a branded hero, the numbered
+   delivery steps, the two quote breaks, ongoing support and the closing
+   consultation CTA. WordPress only registers the "/process" URL.
+   ------------------------------------------------------------------ */
+
+/** One numbered step of the delivery process. */
+export interface ProcessStep {
+  id: string;
+  /** Two-digit step number shown in the crimson badge ("01" … "04"). */
+  number: string;
+  /** Short phase label (Discovery, Design, Build, Launch). */
+  phase: string;
+  title: string;
+  /** One-line promise that sits under the step title. */
+  tagline: string;
+  description: string;
+  /** Short list of what the client actually receives in this step. */
+  deliverables: string[];
+  /** The single result this step is responsible for. */
+  outcome: string;
+}
+
+export interface ProcessContent {
+  hero: {
+    kicker: string;
+    title: string;
+    titleAccent: string;
+    subtitle: string;
+    ctaLabel: string;
+    secondaryLabel: string;
+    trustBadge: string;
+  };
+  stepsIntro: {
+    kicker: string;
+    heading: string;
+    intro: string;
+  };
+  steps: ProcessStep[];
+  /** Quote breaks rendered between the steps. */
+  quotes: Array<{
+    quote: string;
+    linkLabel: string;
+  }>;
+  support: {
+    kicker: string;
+    heading: string;
+    tagline: string;
+    copy: string;
+    points: string[];
+  };
+  cta: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    buttonLabel: string;
+  };
+}
+
+/* ------------------------------------------------------------------
    Pricing page — populated by WordPress ACF with bundled Next.js
    defaults as fallback (app/lib/content/pricing.ts).
    Free-ACF compatible: fixed slots only (groups + text/number/textarea),

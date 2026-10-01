@@ -3,9 +3,14 @@
  * Enquiry notification — reliable delivery for owner alerts.
  *
  * WordPress stores the lead first (see wordpress/cmx-enquiries.php)
- * and tries wp_mail() itself. Shared hosts often refuse or silently
- * drop that mail, so this module is the fallback: when Resend is
- * configured it sends the alert from Vercel instead.
+ * and tries wp_mail() itself. Shared hosts refuse or silently drop that
+ * mail, so this module is the fallback used when the WordPress send did
+ * not go out. Two providers, tried in order:
+ *
+ *   1. Resend     - used whenever RESEND_API_KEY is set.
+ *   2. FormSubmit - needs no account, API key or DNS record, so the
+ *                   alert works on a fresh deploy before anyone has
+ *                   signed up for a transactional-mail provider.
  *
  * Deliberately dependency-free — it calls the Resend HTTP API with
  * the platform `fetch`, so no npm package is added to this project.
@@ -88,24 +93,51 @@ function buildHtml(alert: EnquiryAlert): string {
 }
 
 /**
- * Send the alert through Resend.
+ * Send the owner alert, trying each provider in turn.
  *
- * Returns `null` (without touching the network) when Resend is not
- * configured, so this is a safe no-op by default. When it IS
- * configured it returns true/false for the send attempt.
+ * Returns `true` when a provider accepted the mail, `false` when every
+ * configured provider failed, and `null` when no recipient address
+ * could be resolved at all (so callers can tell "not sent" apart from
+ * "there was nowhere to send it").
  */
 export async function sendEnquiryAlert(
   alert: EnquiryAlert
 ): Promise<boolean | null> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-
   // Fall back to the address baked into app/lib/site.ts, so the alert
   // still has a destination even when ENQUIRY_EMAIL is not set in the
   // environment. That address is the single source of truth in the app.
   const to = process.env.ENQUIRY_EMAIL?.trim() || site.enquiryEmail;
   if (!isEmail(to)) return null;
 
+  // 1. Resend, whenever an API key is configured.
+  const apiKey = process.env.RESEND_API_KEY;
+  if (apiKey) {
+    const sent = await sendViaResend(apiKey, to, alert);
+    if (sent) return true;
+    // Do not give up here: fall through so a Resend outage, an expired
+    // key or an unverified sender domain still alerts the owner.
+  }
+
+  // 2. FormSubmit, the zero-configuration path.
+  return sendViaFormSubmit(to, alert);
+}
+
+/** Plain-text rendering of the selected package, for text-only mail. */
+function describePackage(alert: EnquiryAlert): string {
+  if (alert.packageItems.length === 0) return "-";
+  const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
+  const lines = alert.packageItems
+    .map((item) => `* ${item.service} - $${item.price}`)
+    .join("\n");
+  return `${lines}\n\nEstimated total: $${total}`;
+}
+
+/** Send the alert through Resend's HTTP API (no SDK involved). */
+async function sendViaResend(
+  apiKey: string,
+  to: string,
+  alert: EnquiryAlert
+): Promise<boolean> {
   const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
 
   try {
@@ -140,6 +172,76 @@ export async function sendEnquiryAlert(
     return true;
   } catch (error) {
     console.error("[enquiry] Resend send threw:", error);
+    return false;
+  }
+}
+
+/**
+ * Send the alert through FormSubmit.co - the fallback that needs no account.
+ *
+ * Resend requires an account, an API key and usually a verified sender
+ * domain. That is the right long-term setup, but it also means enquiry
+ * mail silently stops until all three exist. FormSubmit needs nothing but
+ * the recipient address, so the owner alert keeps working on a brand-new
+ * deploy; the first send asks the owner to confirm the address once and
+ * after that it lands in the inbox directly.
+ *
+ * Set ENQUIRY_MAIL_PROVIDER=none to turn this off and leave WordPress
+ * mail (and Resend, when configured) as the only send paths.
+ */
+async function sendViaFormSubmit(
+  to: string,
+  alert: EnquiryAlert
+): Promise<boolean> {
+  if ((process.env.ENQUIRY_MAIL_PROVIDER ?? "").toLowerCase() === "none") {
+    return false;
+  }
+
+  const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
+
+  try {
+    const response = await fetch(
+      `https://formsubmit.co/ajax/${encodeURIComponent(to)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          _subject: `New pricing enquiry from ${alert.name}${
+            total > 0 ? ` ($${total})` : ""
+          }`,
+          _template: "table",
+          // So hitting "Reply" in the inbox reaches the customer.
+          _replyto: alert.email,
+          name: alert.name,
+          email: alert.email,
+          phone: alert.phone ?? "-",
+          source: alert.source,
+          total: `$${total}`,
+          package: describePackage(alert),
+          message: alert.message ?? "-",
+        }),
+      }
+    );
+
+    const body = await response.text().catch(() => "");
+
+    // FormSubmit answers 200 with {"success":"true"|"false", ...}, so the
+    // status alone is not enough to call the send successful.
+    if (!response.ok || !/"success"\s*:\s*"true"/.test(body)) {
+      console.error(
+        "[enquiry] FormSubmit send failed:",
+        response.status,
+        body.slice(0, 200)
+      );
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[enquiry] FormSubmit send threw:", error);
     return false;
   }
 }

@@ -209,6 +209,7 @@ Browser ── POST /api/enquiry ──► Next.js route handler (validates, rat
 | --- | --- |
 | Plugin (storage + `wp_mail`) | `wordpress/cmx-enquiries.php` |
 | Server route (validation + secret) | `app/api/enquiry/route.ts` |
+| Mail fallback (Resend, then FormSubmit) | `app/lib/enquiry-mail.ts` |
 | CMS client | `submitEnquiry()` in `app/lib/wordpress.ts` |
 | Inline form | `app/components/pricing/EnquiryForm.tsx` |
 | CTA wiring | `app/components/pricing/DesignCalculator.tsx` |
@@ -219,6 +220,30 @@ Estimate / Emailed / Received) and the notification goes to the address in
 `CMX_ENQUIRY_EMAIL` — its `Reply-To` is the customer, so replying answers
 them directly. Full install steps:
 [`wordpress/README-wordpress-setup.md`](./wordpress/README-wordpress-setup.md).
+
+---
+
+### Mail delivery
+
+Mail is deliberately three-tier. Shared hosting (Hostinger included) routinely
+refuses or silently drops PHP `mail()`, so the send is never left to WordPress
+alone:
+
+1. WordPress stores the lead, then tries `wp_mail()`.
+2. If WordPress reports that send as failed, `/api/enquiry` re-sends the alert
+   from Vercel through **Resend**.
+3. With no `RESEND_API_KEY` configured it falls back to **FormSubmit**, which
+   needs no account, API key or DNS record, so a fresh deploy still notifies
+   you. The first send asks the recipient to confirm the address once; after
+   that every enquiry lands in the inbox.
+
+Storage always happens first, so no path can lose a lead. Set
+`ENQUIRY_MAIL_PROVIDER=none` to drop step 3, or add `RESEND_API_KEY` for the
+best deliverability (SPF/DKIM handled for you).
+
+Opening an enquiry in wp-admin shows the full package breakdown (every selected
+service with its price, plus the estimated total) and, when a mail failed, the
+exact reason it did.
 
 ---
 

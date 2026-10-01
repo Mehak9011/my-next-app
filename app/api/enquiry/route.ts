@@ -4,6 +4,7 @@ import {
   type EnquiryItem,
   type EnquiryPayload,
 } from "@/app/lib/wordpress";
+import { sendEnquiryAlert } from "@/app/lib/enquiry-mail";
 
 /**
  * ============================================================
@@ -14,6 +15,12 @@ import {
  * this server-only handler validates the payload and forwards it to
  * the `cmx/v1/enquiry` REST route with the shared secret. That keeps
  * the CMS URL and the enquiry key completely hidden from the client.
+ *
+ * Email is two-tier, so a lead is never left unannounced:
+ *   1. WordPress saves the lead and tries wp_mail() itself.
+ *   2. If that send failed and Resend is configured, this handler
+ *      re-sends the alert from Vercel (RESEND_API_KEY).
+ * Storage always happens first, so neither path can lose a lead.
  * ============================================================
  */
 
@@ -154,16 +161,39 @@ export async function POST(request: Request) {
 
   try {
     const result = await submitEnquiry(payload);
-    return NextResponse.json(result, { status: 200 });
+
+    // WordPress stored the lead. If its own mail did not go out and
+    // Resend is configured, send the alert from here instead.
+    let emailed = result.emailed ?? false;
+    if (!emailed) {
+      const resent = await sendEnquiryAlert({
+        name,
+        email,
+        phone: phone || undefined,
+        message: message || undefined,
+        source,
+        packageItems,
+      });
+      if (resent !== null) emailed = resent;
+    }
+
+    return NextResponse.json(
+      { ok: true, id: result.id, emailed },
+      { status: 200 }
+    );
   } catch (error) {
     // Log the real cause server-side; never leak WordPress details.
     console.error("[enquiry] submission failed:", error);
+
+    // A missing server-side secret is a configuration problem, not a
+    // CMS outage — say so plainly so it can be fixed in Vercel.
+    const message =
+      error instanceof Error && error.message.includes("WORDPRESS_ENQUIRY_KEY")
+        ? "Enquiry service is not configured yet."
+        : "We couldn't send your enquiry right now. Please email us directly.";
+
     return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "We couldn't send your enquiry right now. Please email us directly.",
-      },
+      { ok: false, error: message },
       { status: 502 }
     );
   }

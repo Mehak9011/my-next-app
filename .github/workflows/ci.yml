@@ -29,6 +29,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `npm run typecheck` runs `next typegen` first, which generates
+      # .next/types — that is where Next.js declares generated helper
+      # types such as LayoutProps. Without it a fresh checkout has no
+      # generated types and tsc fails on app/layout.tsx.
       - name: Typecheck
         run: npm run typecheck
 

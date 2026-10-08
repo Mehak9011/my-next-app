@@ -92,17 +92,29 @@ function buildHtml(alert: EnquiryAlert): string {
   </div>`;
 }
 
+/** Which provider ended up handling (or failing) the alert. */
+export type EnquiryMailProvider = "resend" | "formsubmit";
+
+export interface EnquiryAlertResult {
+  /** True when a provider accepted the mail for delivery. */
+  sent: boolean;
+  /** The provider tried last (the successful one when `sent` is true). */
+  provider: EnquiryMailProvider;
+}
+
 /**
  * Send the owner alert, trying each provider in turn.
  *
- * Returns `true` when a provider accepted the mail, `false` when every
- * configured provider failed, and `null` when no recipient address
- * could be resolved at all (so callers can tell "not sent" apart from
- * "there was nowhere to send it").
+ * Returns the outcome — `sent` plus which `provider` handled it — or
+ * `null` when no recipient address could be resolved at all (so callers
+ * can tell "not sent" apart from "there was nowhere to send it"). The
+ * provider name matters: the route handler writes it back to WordPress
+ * (`_cmx_mailed_via`) so the wp-admin "Emailed" column can credit the
+ * fallback instead of staying stuck on "no".
  */
 export async function sendEnquiryAlert(
   alert: EnquiryAlert
-): Promise<boolean | null> {
+): Promise<EnquiryAlertResult | null> {
   // Fall back to the address baked into app/lib/site.ts, so the alert
   // still has a destination even when ENQUIRY_EMAIL is not set in the
   // environment. That address is the single source of truth in the app.
@@ -113,13 +125,13 @@ export async function sendEnquiryAlert(
   const apiKey = process.env.RESEND_API_KEY;
   if (apiKey) {
     const sent = await sendViaResend(apiKey, to, alert);
-    if (sent) return true;
+    if (sent) return { sent: true, provider: "resend" };
     // Do not give up here: fall through so a Resend outage, an expired
     // key or an unverified sender domain still alerts the owner.
   }
 
   // 2. FormSubmit, the zero-configuration path.
-  return sendViaFormSubmit(to, alert);
+  return { sent: await sendViaFormSubmit(to, alert), provider: "formsubmit" };
 }
 
 /** Plain-text rendering of the selected package, for text-only mail. */

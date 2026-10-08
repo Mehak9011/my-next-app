@@ -1055,3 +1055,47 @@ export async function submitEnquiry(
 
   return (await response.json()) as EnquiryResult;
 }
+
+/**
+ * Tell WordPress that the fallback alert (Resend/FormSubmit) went out.
+ *
+ * WordPress only records its own wp_mail() result, so without this the
+ * wp-admin "Emailed" column would stay on "no" even when the Next.js
+ * fallback successfully delivered the mail. New route in plugin >= 1.2.0.
+ *
+ * Best-effort by design: returns `false` instead of throwing, because a
+ * failed status update must never break the response the visitor already
+ * received (and an older plugin simply answers 404 here).
+ */
+export async function markEnquiryEmailed(
+  id: number,
+  provider: string
+): Promise<boolean> {
+  const secret = process.env.WORDPRESS_ENQUIRY_KEY;
+  if (!secret || !REST_URL || !Number.isInteger(id) || id <= 0) return false;
+
+  try {
+    const url = `${REST_URL.replace(
+      /\/$/,
+      ""
+    )}/cmx/v1/enquiry/${id}/emailed`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CMX-Key": secret,
+      },
+      body: JSON.stringify({ via: provider.slice(0, 40) }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      console.error(
+        `[enquiry] could not mark #${id} as emailed: HTTP ${response.status}`
+      );
+    }
+    return response.ok;
+  } catch (error) {
+    console.error("[enquiry] markEnquiryEmailed threw:", error);
+    return false;
+  }
+}

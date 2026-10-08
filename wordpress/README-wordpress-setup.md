@@ -38,7 +38,7 @@ The visitor is never redirected to `/contact`.
 1. **Upload the plugin** — wp-admin → Plugins → **Add New** → **Upload Plugin**
    → choose `wordpress/dist/cmx-enquiries.zip` → **Replace** current → **Activate**.
 
-   > Upload the **zip**, not the raw `.php`. Some hosts (Hostinger included)
+                                                                                                                                                                                                                                > Upload the **zip**, not the raw `.php`. Some hosts (Hostinger included)
    > strip a missing WordPress core file (`wp-admin/edit-theme-plugin-file.php`),
    > which breaks **Appearance → Editor** and **Plugins → Editor** with
    > *"Unable to communicate back with site to check for fatal errors"*. Uploading
@@ -93,6 +93,10 @@ hovering it shows the same list one per line. Click any row to open the
   server-side route handler reads it from the environment.
 - **Save happens before send.** If `wp_mail()` fails the lead is still in
   the database — the `Emailed` column shows `no` (hover it for the reason).
+  When the Next.js fallback (Resend/FormSubmit) later delivers the alert it
+  reports back via `POST /wp-json/cmx/v1/enquiry/{id}/emailed` and the column
+  flips to ✓ (hover to see the provider). Requires plugin ≥ 1.2.0 — re-upload
+  the file after an update.
 - **`.htaccess` is fine as-is.** The Next.js origin serves `/api/enquiry`
   itself; the plugin route lives under `/wp-json`, which the existing rules
   already keep on WordPress.

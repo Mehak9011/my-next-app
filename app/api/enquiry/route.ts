@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   submitEnquiry,
+  markEnquiryEmailed,
   type EnquiryItem,
   type EnquiryPayload,
 } from "@/app/lib/wordpress";
@@ -18,8 +19,11 @@ import { sendEnquiryAlert } from "@/app/lib/enquiry-mail";
  *
  * Email is two-tier, so a lead is never left unannounced:
  *   1. WordPress saves the lead and tries wp_mail() itself.
- *   2. If that send failed and Resend is configured, this handler
- *      re-sends the alert from Vercel (RESEND_API_KEY).
+ *   2. If that send failed, this handler re-sends the alert from
+ *      Vercel — Resend when RESEND_API_KEY is set, otherwise the
+ *      zero-config FormSubmit fallback — then tells WordPress via
+ *      `POST /cmx/v1/enquiry/{id}/emailed` so the wp-admin "Emailed"
+ *      column shows the real outcome instead of a stale "no".
  * Storage always happens first, so neither path can lose a lead.
  * ============================================================
  */
@@ -162,11 +166,11 @@ export async function POST(request: Request) {
   try {
     const result = await submitEnquiry(payload);
 
-    // WordPress stored the lead. If its own mail did not go out and
-    // Resend is configured, send the alert from here instead.
+    // WordPress stored the lead. If its own mail did not go out,
+    // send the alert from here instead (Resend, then FormSubmit).
     let emailed = result.emailed ?? false;
     if (!emailed) {
-      const resent = await sendEnquiryAlert({
+      const fallback = await sendEnquiryAlert({
         name,
         email,
         phone: phone || undefined,
@@ -174,7 +178,14 @@ export async function POST(request: Request) {
         source,
         packageItems,
       });
-      if (resent !== null) emailed = resent;
+      if (fallback) {
+        emailed = fallback.sent;
+        // Report a successful fallback back to WordPress so the
+        // wp-admin "Emailed" column shows ✓ instead of a stale "no".
+        if (fallback.sent && typeof result.id === "number") {
+          await markEnquiryEmailed(result.id, fallback.provider);
+        }
+      }
     }
 
     return NextResponse.json(

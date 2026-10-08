@@ -6,7 +6,7 @@
  *              frontend as a WordPress post and emails the site
  *              owner. Powers the "Request This Package" flow on
  *              /pricing (no redirect to /contact).
- * Version:     1.1.0
+ * Version:     1.2.0
  * Requires PHP: 7.4
  * Author:      CodeXmattriX
  * Text Domain: codexmattrix
@@ -15,11 +15,15 @@
  * WHAT IT DOES
  *   1. Registers the private `cmx_enquiry` post type so every
  *      enquiry is visible in wp-admin → Enquiries.
- *   2. Exposes ONE REST route for writing:
+ *   2. Exposes TWO REST routes, both authenticated by a shared secret
+ *      header (X-CMX-Key) so the public cannot touch WordPress — only
+ *      the Next.js server (app/api/enquiry/route.ts) can:
  *        POST /wp-json/cmx/v1/enquiry
- *      authenticated by a shared secret header (X-CMX-Key), so the
- *      public cannot submit spam directly to WordPress — only the
- *      Next.js server (app/api/enquiry/route.ts) can.
+ *          save a lead, then notify the owner via wp_mail().
+ *        POST /wp-json/cmx/v1/enquiry/{id}/emailed
+ *          called by Next.js AFTER its Resend/FormSubmit fallback
+ *          delivered the alert, so the wp-admin "Emailed" column
+ *          reflects the real delivery status instead of a stale "no".
  *   3. Emails the owner AFTER a successful save, so a mail failure
  *      can never lose a lead — it is already in the database.
  *
@@ -219,10 +223,23 @@ add_action(
 
 			case 'cmx_mailed':
 				$mailed = $get( '_cmx_mailed' );
-				echo ( 'yes' === $mailed )
-					? '&#10003;'
-					: '<span style="color:#b32d2e" title="'
+				if ( 'yes' === $mailed ) {
+					// Name the sender when it was the Next.js fallback
+					// (Resend/FormSubmit) rather than wp_mail() itself.
+					$via = $get( '_cmx_mailed_via' );
+					echo ( '' !== $via )
+						? '<span title="' . esc_attr(
+							sprintf(
+								/* translators: %s: provider that delivered the fallback mail */
+								__( 'Delivered by %s — fallback after wp_mail failed', 'codexmattrix' ),
+								$via
+							)
+						) . '">&#10003;</span>'
+						: '&#10003;';
+				} else {
+					echo '<span style="color:#b32d2e" title="'
 						. esc_attr( $get( '_cmx_mail_error' ) ) . '">no</span>';
+				}
 				break;
 		}
 	},
@@ -505,6 +522,17 @@ function cmx_enquiry_render_detail( $post ) {
 	if ( 'yes' === $mailed ) {
 		echo '<span style="color:#007017;">'
 			. esc_html__( 'sent ✓', 'codexmattrix' ) . '</span>';
+		$via = $get( '_cmx_mailed_via' );
+		if ( '' !== $via ) {
+			echo ' <span style="color:#646970;font-size:12px;">'
+				. esc_html(
+					sprintf(
+						/* translators: %s: provider that delivered the fallback mail */
+						__( 'via %s (fallback after wp_mail failed)', 'codexmattrix' ),
+						$via
+					)
+				) . '</span>';
+		}
 	} else {
 		echo '<span style="color:#b32d2e;">'
 			. esc_html__( 'NOT sent', 'codexmattrix' ) . '</span>';
@@ -536,14 +564,31 @@ add_action(
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		// Fallback-delivery report: the Next.js server calls this AFTER
+		// Resend/FormSubmit accepted the alert. WordPress only knows its
+		// own wp_mail() result, so without this call the "Emailed"
+		// column would stay on "no" even when the mail went out.
+		register_rest_route(
+			'cmx/v1',
+			'/enquiry/(?P<id>\d+)/emailed',
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'cmx_enquiry_mark_mailed',
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 );
 
 /**
- * Create an enquiry: save it, then notify the owner.
+ * Shared-secret check used by every cmx/v1 route.
+ *
+ * Returns `null` when the caller may proceed, or a WP_Error (500/403)
+ * describing why not. Kept in one place so the create route and the
+ * "emailed" update route can never drift apart.
  */
-function cmx_enquiry_post( WP_REST_Request $request ) {
-	// --- 1. Authenticate the caller (the Next.js server, not a browser).
+function cmx_enquiry_auth( $request ) {
 	// hash_equals() throws a TypeError when the secret is not a string, so
 	// an unconfigured (empty) plugin must refuse BEFORE it gets there.
 	if ( '' === CMX_ENQUIRY_SECRET ) {
@@ -568,6 +613,19 @@ function cmx_enquiry_post( WP_REST_Request $request ) {
 			__( 'Invalid enquiry key.', 'codexmattrix' ),
 			array( 'status' => 403 )
 		);
+	}
+
+	return null;
+}
+
+/**
+ * Create an enquiry: save it, then notify the owner.
+ */
+function cmx_enquiry_post( WP_REST_Request $request ) {
+	// --- 1. Authenticate the caller (the Next.js server, not a browser).
+	$auth = cmx_enquiry_auth( $request );
+	if ( is_wp_error( $auth ) ) {
+		return $auth;
 	}
 
 	// --- 2. Collect + sanitise.
@@ -727,6 +785,51 @@ function cmx_enquiry_post( WP_REST_Request $request ) {
 			'emailed' => (bool) $sent,
 		),
 		201
+	);
+}
+
+/**
+ * Mark an enquiry as emailed after a Next.js fallback send succeeded.
+ *
+ * WordPress can only observe its own wp_mail() result, so when the
+ * alert was delivered by Resend/FormSubmit (app/lib/enquiry-mail.ts)
+ * the "Emailed" column would keep showing "no". The Next.js server
+ * calls this route with the created post id to correct the record.
+ *
+ * Idempotent — repeating the same update is harmless.
+ */
+function cmx_enquiry_mark_mailed( WP_REST_Request $request ) {
+	$auth = cmx_enquiry_auth( $request );
+	if ( is_wp_error( $auth ) ) {
+		return $auth;
+	}
+
+	$post_id = (int) $request->get_param( 'id' );
+	if ( $post_id <= 0 || 'cmx_enquiry' !== get_post_type( $post_id ) ) {
+		return new WP_Error(
+			'cmx_not_found',
+			__( 'No such enquiry.', 'codexmattrix' ),
+			array( 'status' => 404 )
+		);
+	}
+
+	// Who actually delivered it — "resend" or "formsubmit".
+	$via = cmx_enquiry_text( $request->get_param( 'via' ), 40 );
+	if ( '' === $via ) {
+		$via = 'fallback';
+	}
+
+	update_post_meta( $post_id, '_cmx_mailed', 'yes' );
+	update_post_meta( $post_id, '_cmx_mail_error', '' );
+	update_post_meta( $post_id, '_cmx_mailed_via', $via );
+
+	return new WP_REST_Response(
+		array(
+			'ok'  => true,
+			'id'  => $post_id,
+			'via' => $via,
+		),
+		200
 	);
 }
 

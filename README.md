@@ -236,6 +236,10 @@ alone:
    needs no account, API key or DNS record, so a fresh deploy still notifies
    you. The first send asks the recipient to confirm the address once; after
    that every enquiry lands in the inbox.
+4. A successful fallback is reported back to WordPress
+   (`POST /wp-json/cmx/v1/enquiry/{id}/emailed`, plugin ≥ 1.2.0), so the
+   **Emailed** column shows ✓ — hover it to see which provider delivered
+   (`resend` or `formsubmit`) instead of a stale `no`.
 
 Storage always happens first, so no path can lose a lead. Set
 `ENQUIRY_MAIL_PROVIDER=none` to drop step 3, or add `RESEND_API_KEY` for the

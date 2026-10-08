@@ -13,6 +13,8 @@
 //   2. POST /wp-json/cmx/v1/enquiry is reachable
 //   3. The route rejects a request with a WRONG key (403) — proves
 //      the shared-secret guard is live
+//   4. POST /wp-json/cmx/v1/enquiry/{id}/emailed (plugin >= 1.2.0) —
+//      the route the fallback uses to flip the "Emailed" column
 //
 // It never creates a real enquiry, so it is safe to run in CI.
 //
@@ -126,6 +128,43 @@ if (!key) {
       }. Check the plugin is active and WordPress mail can send.`
     );
     failures++;
+  }
+}
+
+// 4. Fallback "emailed" status route (plugin >= 1.2.0) --------------------------
+console.log("\n[4] Fallback emailed-status route");
+{
+  // Wrong key on a probe id: proves the route exists without touching
+  // any real enquiry (403 = guard live, 404 = plugin too old).
+  let probe;
+  try {
+    const response = await fetch(`${endpoint}/1/emailed`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CMX-Key": "invalid-probe-key",
+      },
+      body: JSON.stringify({ via: "probe" }),
+    });
+    probe = { reached: true, status: response.status };
+  } catch (e) {
+    probe = { reached: false, status: 0, err: e?.message ?? String(e) };
+  }
+
+  if (!probe.reached) {
+    miss(`Route unreachable: ${probe.err ?? "network error"}`);
+    failures++;
+  } else if (probe.status === 403 || probe.status === 401) {
+    ok(
+      "Route is live — a successful fallback send will now flip the Emailed column to ✓."
+    );
+  } else if (probe.status === 404) {
+    // Storage + mail still work; only the status write-back is missing.
+    console.log(
+      "  ⚠️  Route not found — the installed plugin is older than 1.2.0. Re-upload wordpress/cmx-enquiries.php (and activate) so fallback emails show as sent in wp-admin."
+    );
+  } else {
+    ok(`Route answered (HTTP ${probe.status}).`);
   }
 }
 

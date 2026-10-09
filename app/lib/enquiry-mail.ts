@@ -62,6 +62,47 @@ function esc(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Render Source the way WordPress does in its own mail (ucfirst). */
+function displaySource(source: string): string {
+  const trimmed = source.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : "—";
+}
+
+/** Render Page as a clickable link when it is a URL, plain text otherwise. */
+function displayPage(page?: string): string {
+  const value = (page ?? "").trim();
+  if (!value) return "—";
+  if (/^https?:\/\//i.test(value)) {
+    return `<a href="${esc(value)}">${esc(value)}</a>`;
+  }
+  return esc(value);
+}
+
+/**
+ * Show the WordPress submission stamp plus the same moment in IST, e.g.
+ * `2026-10-09 07:18:16 UTC (2026-10-09 12:48 pm IST)`. The UTC part stays
+ * byte-identical to the `_cmx_submitted` value WordPress saved.
+ */
+function displaySubmitted(alert: EnquiryAlert): string {
+  const stamp = submittedStamp(alert);
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2}) UTC$/.exec(stamp);
+  if (!match) return esc(stamp);
+  const [, year, month, day, hour, minute, second] = match.map(Number);
+  const ist = new Date(
+    Date.UTC(year, month - 1, day, hour, minute, second) +
+      5.5 * 3600 * 1000
+  );
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hours = ist.getUTCHours();
+  const ampm = hours >= 12 ? "pm" : "am";
+  const twelve = hours % 12 === 0 ? 12 : hours % 12;
+  const istText =
+    `${ist.getUTCFullYear()}-${pad(ist.getUTCMonth() + 1)}-${pad(ist.getUTCDate())} ` +
+    `${twelve}:${pad(ist.getUTCMinutes())} ${ampm} IST`;
+  return `${esc(stamp)} (${istText})`;
+}
+
 /** Build the same HTML alert WordPress renders. */
 function buildHtml(alert: EnquiryAlert): string {
   const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
@@ -108,11 +149,11 @@ function buildHtml(alert: EnquiryAlert): string {
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Company</td>
           <td style="padding:6px 0;font-size:14px;">${esc(alert.company || "—")}</td></tr>
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Source</td>
-          <td style="padding:6px 0;font-size:14px;">${esc(alert.source)}</td></tr>
+          <td style="padding:6px 0;font-size:14px;">${displaySource(alert.source)}</td></tr>
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Page</td>
-          <td style="padding:6px 0;font-size:14px;">${esc(alert.page || "—")}</td></tr>
+          <td style="padding:6px 0;font-size:14px;">${displayPage(alert.page)}</td></tr>
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Submitted</td>
-          <td style="padding:6px 0;font-size:14px;">${esc(submittedStamp(alert))}</td></tr>
+          <td style="padding:6px 0;font-size:14px;">${displaySubmitted(alert)}</td></tr>
     </table>
     ${packageBlock}${messageBlock}
   </div>`;

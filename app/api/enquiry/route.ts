@@ -196,6 +196,7 @@ export async function POST(request: Request) {
         mail.via = fallback.provider;
         mail.sent = fallback.sent;
         if (fallback.reason) mail.reason = fallback.reason;
+        if (fallback.status) mail.status = fallback.status;
         // Report a successful fallback back to WordPress so the
         // wp-admin "Emailed" column shows ✓ instead of a stale "no".
         if (fallback.sent && typeof result.id === "number") {

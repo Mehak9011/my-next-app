@@ -134,6 +134,8 @@ export interface EnquiryAlertResult {
   provider: EnquiryMailProvider;
   /** Present only when `sent` is false — says why that provider refused. */
   reason?: EnquiryMailReason;
+  /** HTTP status when the provider answered with an error (network throws omit it). */
+  status?: number;
 }
 
 /**
@@ -166,7 +168,12 @@ export async function sendEnquiryAlert(
 
   // 2. FormSubmit, the zero-configuration path.
   const fallback = await sendViaFormSubmit(to, alert);
-  return { sent: fallback.sent, provider: "formsubmit", reason: fallback.reason };
+  return {
+    sent: fallback.sent,
+    provider: "formsubmit",
+    reason: fallback.reason,
+    status: fallback.status,
+  };
 }
 
 /** Plain-text rendering of the selected package, for text-only mail. */
@@ -239,7 +246,7 @@ async function sendViaResend(
 async function sendViaFormSubmit(
   to: string,
   alert: EnquiryAlert
-): Promise<{ sent: boolean; reason?: EnquiryMailReason }> {
+): Promise<{ sent: boolean; reason?: EnquiryMailReason; status?: number }> {
   if ((process.env.ENQUIRY_MAIL_PROVIDER ?? "").toLowerCase() === "none") {
     return { sent: false, reason: "disabled" };
   }
@@ -250,8 +257,13 @@ async function sendViaFormSubmit(
   // on a real site — a bare server-side POST is rejected with "Make sure
   // you open this page through a web server". Sending an explicit Referer
   // and Origin is what makes it accept the request.
+  //
+  // Deliberately NOT NEXT_PUBLIC_SITE_URL: locally that can be
+  // localhost and on Vercel it is often the *.vercel.app URL — FormSubmit
+  // rejects those referers. The public site origin is the constant that
+  // matches where the form actually lives.
   const origin = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://cms.codexmattrix.com"
+    process.env.ENQUIRY_MAIL_ORIGIN ?? "https://cms.codexmattrix.com"
   ).replace(/\/+$/, "");
 
   try {
@@ -307,7 +319,7 @@ async function sendViaFormSubmit(
         response.status,
         body.slice(0, 200)
       );
-      return { sent: false, reason: "provider_error" };
+      return { sent: false, reason: "provider_error", status: response.status };
     }
 
     return { sent: true };

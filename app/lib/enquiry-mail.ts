@@ -121,11 +121,19 @@ function buildHtml(alert: EnquiryAlert): string {
 /** Which provider ended up handling (or failing) the alert. */
 export type EnquiryMailProvider = "resend" | "formsubmit";
 
+/** Coarse reason a provider did not deliver (never leaks credentials). */
+export type EnquiryMailReason =
+  | "disabled" // ENQUIRY_MAIL_PROVIDER=none
+  | "held_activation" // FormSubmit one-time activation still pending
+  | "provider_error"; // HTTP or network failure at the provider
+
 export interface EnquiryAlertResult {
   /** True when a provider accepted the mail for delivery. */
   sent: boolean;
   /** The provider tried last (the successful one when `sent` is true). */
   provider: EnquiryMailProvider;
+  /** Present only when `sent` is false — says why that provider refused. */
+  reason?: EnquiryMailReason;
 }
 
 /**
@@ -157,7 +165,8 @@ export async function sendEnquiryAlert(
   }
 
   // 2. FormSubmit, the zero-configuration path.
-  return { sent: await sendViaFormSubmit(to, alert), provider: "formsubmit" };
+  const fallback = await sendViaFormSubmit(to, alert);
+  return { sent: fallback.sent, provider: "formsubmit", reason: fallback.reason };
 }
 
 /** Plain-text rendering of the selected package, for text-only mail. */
@@ -230,9 +239,9 @@ async function sendViaResend(
 async function sendViaFormSubmit(
   to: string,
   alert: EnquiryAlert
-): Promise<boolean> {
+): Promise<{ sent: boolean; reason?: EnquiryMailReason }> {
   if ((process.env.ENQUIRY_MAIL_PROVIDER ?? "").toLowerCase() === "none") {
-    return false;
+    return { sent: false, reason: "disabled" };
   }
 
   const total = alert.packageItems.reduce((sum, i) => sum + i.price, 0);
@@ -290,7 +299,7 @@ async function sendViaFormSubmit(
         console.error(
           `[enquiry] FormSubmit is holding the alert until ${to} clicks its one-time activation link`
         );
-        return false;
+        return { sent: false, reason: "held_activation" };
       }
 
       console.error(
@@ -298,12 +307,12 @@ async function sendViaFormSubmit(
         response.status,
         body.slice(0, 200)
       );
-      return false;
+      return { sent: false, reason: "provider_error" };
     }
 
-    return true;
+    return { sent: true };
   } catch (error) {
     console.error("[enquiry] FormSubmit send threw:", error);
-    return false;
+    return { sent: false, reason: "provider_error" };
   }
 }

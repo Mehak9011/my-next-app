@@ -171,6 +171,10 @@ export async function POST(request: Request) {
     // WordPress stored the lead. If its own mail did not go out,
     // send the alert from here instead (Resend, then FormSubmit).
     let emailed = result.emailed ?? false;
+    // Coarse mail outcome for the response/logs: `wp` is WordPress's own
+    // wp_mail() result, `via`/`sent`/`reason` describe the fallback.
+    // No secrets — just which tier delivered (or why it did not).
+    const mail: Record<string, unknown> = { wp: result.emailed ?? false };
     if (!emailed) {
       const fallback = await sendEnquiryAlert({
         name,
@@ -189,16 +193,22 @@ export async function POST(request: Request) {
       });
       if (fallback) {
         emailed = fallback.sent;
+        mail.via = fallback.provider;
+        mail.sent = fallback.sent;
+        if (fallback.reason) mail.reason = fallback.reason;
         // Report a successful fallback back to WordPress so the
         // wp-admin "Emailed" column shows ✓ instead of a stale "no".
         if (fallback.sent && typeof result.id === "number") {
           await markEnquiryEmailed(result.id, fallback.provider);
         }
+      } else {
+        // sendEnquiryAlert returns null only when no recipient resolved.
+        mail.reason = "no_recipient";
       }
     }
 
     return NextResponse.json(
-      { ok: true, id: result.id, emailed },
+      { ok: true, id: result.id, emailed, mail },
       { status: 200 }
     );
   } catch (error) {

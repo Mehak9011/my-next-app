@@ -132,6 +132,7 @@ export async function POST(request: Request) {
   const name = clean(body.name, 120);
   const email = clean(body.email, 190);
   const phone = clean(body.phone, 40);
+  const company = clean(body.company, 160);
   const message = clean(body.message, 4000);
   const source = clean(body.source, 40) || "pricing";
   const page = clean(body.page, 300);
@@ -157,6 +158,7 @@ export async function POST(request: Request) {
     name,
     email,
     phone: phone || undefined,
+    company: company || undefined,
     message: message || undefined,
     source,
     page: page || undefined,
@@ -174,8 +176,15 @@ export async function POST(request: Request) {
         name,
         email,
         phone: phone || undefined,
+        company: company || undefined,
         message: message || undefined,
         source,
+        page: page || undefined,
+        // Same format WordPress writes into `_cmx_submitted`.
+        submitted: `${new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ")} UTC`,
         packageItems,
       });
       if (fallback) {
@@ -196,15 +205,30 @@ export async function POST(request: Request) {
     // Log the real cause server-side; never leak WordPress details.
     console.error("[enquiry] submission failed:", error);
 
-    // A missing server-side secret is a configuration problem, not a
+    // Coarse machine-readable cause — never the CMS URL or the secret.
+    // The browser response and the Vercel logs both carry it, so a live
+    // failure names the step that broke (env, auth, reachability) without
+    // exposing anything sensitive to the visitor.
+    const detail = error instanceof Error ? error.message : "";
+    let code = "unknown";
+    if (detail.includes("WORDPRESS_ENQUIRY_KEY")) code = "env_key";
+    else if (detail.includes("WORDPRESS_REST_URL")) code = "env_rest_url";
+    else if (detail.includes("WordPress enquiry error: 403")) code = "wp_403";
+    else if (detail.includes("WordPress enquiry error: 404")) code = "wp_404";
+    else if (/WordPress enquiry error: 5\d\d/.test(detail)) code = "wp_5xx";
+    else if (detail.includes("WordPress enquiry error:")) code = "wp_error";
+    else if (/fetch failed|ENOTFOUND|ECONN|socket|abort|timed? ?out/i.test(detail))
+      code = "wp_unreachable";
+
+    // A missing server-side secret/URL is a configuration problem, not a
     // CMS outage — say so plainly so it can be fixed in Vercel.
     const message =
-      error instanceof Error && error.message.includes("WORDPRESS_ENQUIRY_KEY")
+      code === "env_key" || code === "env_rest_url"
         ? "Enquiry service is not configured yet."
         : "We couldn't send your enquiry right now. Please email us directly.";
 
     return NextResponse.json(
-      { ok: false, error: message },
+      { ok: false, error: message, code },
       { status: 502 }
     );
   }

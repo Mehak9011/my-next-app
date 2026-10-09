@@ -27,10 +27,30 @@ export interface EnquiryAlert {
   name: string;
   email: string;
   phone?: string;
+  company?: string;
   message?: string;
   source: string;
+  /** The page the visitor submitted from (same as `_cmx_page` in WP). */
+  page?: string;
+  /**
+   * Submission time, formatted exactly like WordPress stores it
+   * (`Y-m-d H:i:s` + " UTC"). Generated at send time when omitted, so
+   * the email always shows the same field WordPress saved.
+   */
+  submitted?: string;
   /** Lines the visitor selected, already priced. */
   packageItems: { service: string; price: number }[];
+}
+
+/**
+ * Format the submission timestamp the way WordPress does in
+ * `cmx_enquiry_post()` — `gmdate('Y-m-d H:i:s') . ' UTC'` — so the
+ * fallback email shows the exact same value that gets saved in the
+ * `_cmx_submitted` post meta.
+ */
+function submittedStamp(alert: EnquiryAlert): string {
+  if (alert.submitted) return alert.submitted;
+  return `${new Date().toISOString().slice(0, 19).replace("T", " ")} UTC`;
 }
 
 /** Escape a value for the HTML body. */
@@ -85,8 +105,14 @@ function buildHtml(alert: EnquiryAlert): string {
           )}">${esc(alert.email)}</a></td></tr>
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Phone</td>
           <td style="padding:6px 0;font-size:14px;">${esc(alert.phone ?? "—")}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Company</td>
+          <td style="padding:6px 0;font-size:14px;">${esc(alert.company || "—")}</td></tr>
       <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Source</td>
           <td style="padding:6px 0;font-size:14px;">${esc(alert.source)}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Page</td>
+          <td style="padding:6px 0;font-size:14px;">${esc(alert.page || "—")}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#9aa3ac;font-size:13px;">Submitted</td>
+          <td style="padding:6px 0;font-size:14px;">${esc(submittedStamp(alert))}</td></tr>
     </table>
     ${packageBlock}${messageBlock}
   </div>`;
@@ -240,7 +266,10 @@ async function sendViaFormSubmit(
           name: alert.name,
           email: alert.email,
           phone: alert.phone ?? "-",
+          company: alert.company || "-",
           source: alert.source,
+          page: alert.page || "-",
+          submitted: submittedStamp(alert),
           total: `$${total}`,
           package: describePackage(alert),
           message: alert.message ?? "-",
